@@ -42,7 +42,7 @@ validateSpecies = function(species.df){
     }
   )
 
-  #Join scientific names to BBS data based on character AOU column
+  # Join scientific names to BBS data based on character AOU column
   species.df <- species.df %>%
     dplyr::left_join(bird.spec.names, c("AOU.char" = "Species.Number"))
 
@@ -51,7 +51,7 @@ validateSpecies = function(species.df){
   data("BirdTree.syns")
   BirdTree.syns <- BirdTree.syns[, c("Synonym", "BirdTree.name")]
 
-  # Download the latest version of the BirdTree / BirdLife taxomony
+  # Download the latest version of the BirdTree / BirdLife taxonomy
   temp <- tempfile()
   download.file('https://data.vertlife.org/birdtree/BLIOCPhyloMasterTax.csv',
                 temp)
