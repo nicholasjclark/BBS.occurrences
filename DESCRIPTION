@@ -1,13 +1,21 @@
 Package: BBS.occurrences
 Version: 0.0.0.9000
 Title: BBS occurrences and co-occurrences analysis
-Description: What the package does (one paragraph).
-Authors@R: person("Clark", "Nicholas", "nicholas.j.clark1214@gmail.com", c("aut", "cre"))
+Description: A package to store functions and datasets necessary for analysing BBS co-occurrences and community compositions over time.
+Authors@R: person("Nicholas J","Clark",email= "nicholas.j.clark1214@gmail.com", role = c("aut", "cre"))
+Maintainer: Nicholas Clark <nicholas.j.clark1214@gmail.com>
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 ByteCompile: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.0.1
+LazyData: TRUE
+Imports: stringr,
+    dplyr,
+    magrittr,
+Suggests: testthat,
+    knitr, 
+    rmarkdown
+VignetteBuilder: knitr
 URL: https://github.com/nicholasjclark/BBS.occurrences
 BugReports: https://github.com/nicholasjclark/BBS.occurrences/issues

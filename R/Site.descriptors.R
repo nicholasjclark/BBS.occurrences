@@ -1,0 +1,16 @@
+#' Site - level covariates for the NA BBS observations
+#'
+#'
+#' @format A \code{data.frame} containing 34 variables describing
+#' covariates and other descriptors for the individual BBS observations. Variables
+#' include standardised information gathered by BBS (i.e. route IDs, temperatures, times,
+#' etc...) as well as GPS coordinates and percent cover for a range of
+#' landcover covariates. Landcover variables were accessed at 10 x 10km resolution, downloaded
+#' from MODIS Landcover Type 1, product MCD12Q1. See scripts at
+#' https://github.com/nicholasjclark/LandcoverMODIS for more details on MODIS downloads
+#'
+#' @docType data
+#' @usage data(Site.descriptors)
+#' @keywords datasets
+#'
+"Site.descriptors"

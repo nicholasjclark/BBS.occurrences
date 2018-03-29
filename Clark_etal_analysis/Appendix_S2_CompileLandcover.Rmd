@@ -1,0 +1,60 @@
+---
+title: "Appendix S2 - Compile Landcover Covariates"
+author: "Dr Nicholas Clark"
+output:
+  pdf_document:
+    highlight: zenburn
+urlcolor: blue
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
+```
+
+If need be, install `MODISTools2`. Please note that older versions of `MODISTools` may have problems with broken links! We have found it is better to remove old versions first and install the most up-to-date version
+```{r eval = FALSE}
+remove.packages('MODISTools')
+install.packages("https://modis.ornl.gov/files/modissoapservice/MODISTools2.tar.gz",
+                 repos = NULL, type = "source")
+```
+ 
+Or, if you prefer manual installation, you can manually downlaod MODISTools2.tar.gz here (https://modis.ornl.gov/data/modis_webservice.html)
+```{r eval = FALSE}
+install.packages("yourfilepath/MODISTools2.tar.gz", repos = NULL, type = "source")
+```
+
+Load the previously compiled BBS data
+```{r eval = FALSE}
+load("./BBS.Data.cleaned/BBS.2003-2009.filtered.Rdata")
+```
+
+Gather lats and longs for collecting MODIS data from each unique site
+```{r eval = FALSE}
+coordinates <- data.frame(lat = latlon[,2], long = latlon[,1])
+```
+
+Find unique sites
+```{r eval = FALSE}
+library(dplyr)
+uniq.coordinates = coordinates %>%
+  group_by(lat, long) %>%
+  distinct()
+```
+
+Source functions needed for MODIS downloading and processing from N Clark's `GitHub` account
+```{r eval = FALSE}
+source("https://raw.githubusercontent.com/nicholasjclark/
+       LandcoverMODIS/master/R/Landcover_functions.R")
+```
+
+Download data for the specified years (!! but don't include 2010-2012, see below !!). This stores the raw downloaded data in a new 'LandCover' folder. Note that the input `coordinates` file must have colnames `lat` and `long`. Also note that landcover downloads struggle if we access more than ~100 points at a time (depending on your system). Downloading multiple subsets over time is safer
+```{r eval = FALSE}
+download_landcover(years_gather = c(2003:2009), 
+                   coordinates = uniq.coordinates[1:100, ])
+```
+
+Repeat the above function until all of the necessary files have been downloaded. Once ALL of the necessary files are downloaded, summarise them. But please not, you should not summarise before all necessary raw files are downloaded (raw files get deleted!). This function writes a `.csv` summary file in the `LandCover` folder and deletes the raw files
+```{r eval = FALSE}
+summarise_landcover() 
+```
