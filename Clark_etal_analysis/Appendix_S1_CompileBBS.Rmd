@@ -1,6 +1,6 @@
 ---
 title: "Appendix S1 - Compiling NA BBS Observations"
-author: "Dr Nicholas Clark"
+author: "Nicholas J Clark, David J. Harris, Ceridwen Fraser"
 output:
   pdf_document:
     highlight: zenburn
@@ -12,18 +12,18 @@ library(knitr)
 opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
 ```
 
-Specify the years to gather BBS data (note, crashes can sometimes occur when using multiple years). We found it is best to run the below functions separately for each year and save as the resulting `.Rdata` file. You can then bring all saved files in as a list and compile them at once (see below for methods to filter and compile)
+Specify the years to gather North American Breeding Bird Survey (BBS) data. Note, crashes can sometimes occur when using multiple years. We found it is best to run the below functions separately for each year and save the resulting object as an `.Rdata` file. You can then bring all saved files in as a list and compile them at once (see below for methods to filter and compile)
 ```{r eval = FALSE}
 year <- 2003
 ```
 
-Gather the full dataset of BBS data from USA (840) for the specified years
+Gather the full dataset of BBS observations from USA (840) for the specified years
 ```{r eval = FALSE}
 # install.packages("pullBBS")
 species.df <- pullBBS::pullBBS(year = year, country = 840, useCache = T)
 ```
 
-Add BirdTree species names and eliminate records of unrecognised species
+Add BirdTree.org species names and eliminate records of unrecognised species
 ```{r eval = FALSE}
 # install.packages("devtools")
 devtools::install_github("nicholasjclark/BBS.occurrences")
@@ -35,7 +35,7 @@ Save the dataset
 save(species.df, file = "./BBS.Data.cleaned/USA.BBS.2003cleaned.Rdata")
 ```
 
-Repeate for the next year, etc. Once all of the data is downloaded, we can read in all the separate yearly BBS datasets and filter them
+Repeat for the next year, etc. Once all of the data is downloaded, we can read in all the separate yearly BBS datasets and filter them
 ```{r eval = FALSE}
 all.files <- list.files(path="./BBS.Data.cleaned/", pattern="USA.BBS")
 
@@ -53,9 +53,13 @@ BBS runs are only valid if `RunType == 1` and if `Run protocol (RPID) == 101`. I
 # install.packages("dplyr")
 # install.packages("lubridate")
 species.df = species.df %>%
-  dplyr::filter(RPID == 101 & RunType == 1 & RouteTypeID == 1 & RouteTypeDetailId %in% c(1,2)) %>%
+  
+  dplyr::filter(RPID == 101 & RunType == 1 & RouteTypeID == 1 
+                & RouteTypeDetailId %in% c(1,2)) %>%
+  
   dplyr::mutate(ydays = lubridate::yday(lubridate::ymd(paste(year, Month, Day,
                                                              sep = "-")))) %>%
+  
   dplyr::mutate(start.times = as.numeric(as.difftime(
       lubridate::hm(gsub("^(.)(.*)$", "\\1:\\2", StartTime)))) / 60 / 60)
 ```
