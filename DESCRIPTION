@@ -1,6 +1,6 @@
 Package: BBS.occurrences
 Version: 0.0.0.9000
-Title: BBS occurrences and co-occurrences analysis
+Title: BBS community composition and co-occurrence analysis
 Description: A package to store functions and datasets necessary for analysing BBS co-occurrences and community compositions over time.
 Authors@R: person("Nicholas J","Clark",email= "nicholas.j.clark1214@gmail.com", role = c("aut", "cre"))
 Maintainer: Nicholas Clark <nicholas.j.clark1214@gmail.com>

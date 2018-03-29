@@ -2,6 +2,8 @@
 #'common names. We also add a BirdTree.org column to facilitate extraction of
 #'phylogenetic and functional trait information
 #'
+#'@importFrom magrittr %>%
+#'
 #'@param species.df A \code{data.frame} containing results from a
 #'\code{\link[pullBBS]{pullBBS}} object. Note that an internet connection is needed for
 #'downloading the latest version of the BirdTree / BirdLife taxonomy file

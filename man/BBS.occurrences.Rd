@@ -15,7 +15,7 @@ data("BBS.abundances")
 BBS data for each year was extracted using functions
 in the 'pullBBS' package
 (i.e. species.df <- pullBBS(year = 2003, country = 840, useCache = T)). The
-entire workflow is shown in the \code{BBS_data_compiling.R} script. Names were then
+entire workflow is shown in the \code{Appendix S1} script. Names were then
 cleaned and filtered to only include species with names matching to
 BirdTree.org using \code{validateSpecies.R}
 }

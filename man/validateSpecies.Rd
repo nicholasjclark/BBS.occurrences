@@ -2,10 +2,28 @@
 % Please edit documentation in R/validateSpecies.R
 \name{validateSpecies}
 \alias{validateSpecies}
-\title{Determines if a species is "valid" by looking at its latin and}
+\title{Determines if a species is considered "valid" by looking at its latin and
+common names. We also add a BirdTree.org column to facilitate extraction of
+phylogenetic and functional trait information}
 \usage{
 validateSpecies(species.df)
 }
+\arguments{
+\item{species.df}{A \code{data.frame} containing results from a
+\code{\link[pullBBS]{pullBBS}} object. Note that an internet connection is needed for
+downloading the latest version of the BirdTree / BirdLife taxonomy file}
+}
 \description{
-Determines if a species is "valid" by looking at its latin and
+Determines if a species is considered "valid" by looking at its latin and
+common names. We also add a BirdTree.org column to facilitate extraction of
+phylogenetic and functional trait information
+}
+\details{
+'Species' names from BBS observations may not represent valid species. This
+function uses pattern matching in attempts to classify these vague species into valid ones.
+It will also match names to BirdTree.org / BirdLife taxonomy to facilitate
+collection of species' phylogenetic and functional traits.
+}
+\seealso{
+\code{\link[pullBBS]{pullBBS}}
 }
