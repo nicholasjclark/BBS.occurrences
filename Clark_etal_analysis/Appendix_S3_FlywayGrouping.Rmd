@@ -81,6 +81,6 @@ Site.descriptors = Site.descriptors %>%
 
 Save the grouped descriptor data for downstream analysis
 ```{r eval = FALSE}
-dir.create('Analysis_data')
+dir.create('./Analysis_data')
 save(Site.descriptors file = './Analysis_data/Site.descriptors.Rdata')
 ```
