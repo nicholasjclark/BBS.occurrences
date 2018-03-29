@@ -1,8 +1,8 @@
 Package: BBS.occurrences
 Version: 0.0.0.9000
-Title: What the Package Does (One Line, Title Case)
+Title: BBS occurrences and co-occurrences analysis
 Description: What the package does (one paragraph).
-Authors@R: person("First", "Last", , "first.last@example.com", c("aut", "cre"))
+Authors@R: person("Clark", "Nicholas", "nicholas.j.clark1214@gmail.com", c("aut", "cre"))
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
