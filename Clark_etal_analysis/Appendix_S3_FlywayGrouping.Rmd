@@ -1,0 +1,86 @@
+---
+title: "Appendix S3 - Group Sites by Flyway"
+author: "Nicholas J Clark, David J Harris, Ceridwen Fraser"
+output:
+  pdf_document:
+    highlight: zenburn
+urlcolor: blue
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
+```
+
+Load the cleaned BBS survey dataset that was prepared in `Appendix S1`
+```{r eval = FALSE}
+load("./BBS.Data.cleaned/BBS.2003-2009.filtered.Rdata")
+```
+
+Load the Landcover summary data for survey points that was prepared in `Appendix S2`
+```{r eval = FALSE}
+uniq.points.landcover <- read.csv("./LandCover/MODIS_Landcover_summary.csv")
+```
+
+Here we group sites into regions based on recognised North American migratory flyways. This is accomplished by loading the US Fish and Wildlife Service's `WaterfowlFlyways` shapefile. Note, this file can be manually downloaded here: https://ecos.fws.gov/ServCat/Reference/Profile/42276 if the `tempfile` strategy below fails. We then use a simple function to ensure that the coordinate system of our latitudes and longitudes match that of the shapefile and then intersect each unique point with the flyway layer
+```{r eval = FALSE}
+# install.packages('sf')
+library(sf)
+library(dplyr)
+temp <- tempfile()
+download.file('https://ecos.fws.gov/ServCat/DownloadFile/113670', temp)
+fly.shp <- sf::st_read(unzip(temp, 'WaterfowlFlyways.shp'))
+unlink(temp)
+
+geo_inside <- function(lon, lat, map, variable) {
+#Escape the variable name
+  variable <- dplyr::enquo(variable)
+  
+#Convert each unique point into an sf object
+  pt <- tibble::data_frame(x = lon,
+                           y = lat) %>%
+    sf::st_as_sf(coords = c("x", "y"), 
+                 crs = 4269) %>%
+    sf::st_transform(crs = sf::st_crs(fly.shp))
+  
+#Intersect the point with the map object
+pt %>% 
+  sf::st_join(map) %>% 
+  dplyr::pull(!!variable)
+}
+```
+
+Put landcover covariates and site descriptors into a single dataframe
+```{r message=FALSE,warning=FALSE, eval = FALSE}
+library(dplyr)
+Site.descriptors = sites.df %>%
+  dplyr::left_join(uniq.points.landcover, 
+                   by = c('Latitude' = 'lat',
+                          'Longitude' = 'long',
+                          'year' = 'year')) %>%
+  dplyr::select(-modis.band, -richness, -simpsons.d, -simpsons.evenness,
+                -no.data.fill)
+```
+
+\pagebreak
+
+Now that all of our site-level covariates are stored together, we can intersect each unique point with the shapefile above to group the sites into flyways and then join the grouping information back to the descriptors data
+```{r eval = FALSE}
+point_site.groups = Site.descriptors %>%
+  dplyr::select(lat, lon) %>%
+  dplyr::distinct() %>%
+  dplyr::mutate(site.group = geo_inside(lon = lon, 
+                                         lat = lat,
+                                  map = fly.shp,
+                                  variable = NAME))
+
+Site.descriptors = Site.descriptors %>%
+  left_join(point_site.groups, by = c('Latitude' = 'lat',
+                                      'Longitude' = 'lon'))
+```
+
+Save the grouped descriptor data for downstream analysis
+```{r eval = FALSE}
+dir.create('Analysis_data')
+save(Site.descriptors file = './Analysis_data/Site.descriptors.Rdata')
+```
