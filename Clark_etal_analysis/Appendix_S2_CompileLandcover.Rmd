@@ -1,6 +1,6 @@
 ---
 title: "Appendix S2 - Compile Landcover Covariates"
-author: "Nicholas J Clark, David J. Harris, Ceridwen Fraser"
+author: "Nicholas J Clark, David J Harris, Ceridwen Fraser"
 output:
   pdf_document:
     highlight: zenburn
@@ -54,7 +54,7 @@ download_landcover(years_gather = c(2003:2009),
                    coordinates = uniq.coordinates[1:100, ])
 ```
 
-Repeat the above function until all of the necessary files have been downloaded. Once ALL of the necessary files are downloaded, summarise them. But please not, you should not summarise before all necessary raw files are downloaded (raw files get deleted!). This function writes a `.csv` summary file in the `LandCover` folder and deletes the raw files
+Repeat the above function until all of the necessary files have been downloaded. Once ALL of the necessary files are downloaded, then summarise them and calculate proportions of landcover. But please note, you should not summarise before all necessary raw files are downloaded (raw files will get deleted once the function completes in order to save memory!). This function writes a `.csv` summary file (containing proportional cover for a range of habitat categories) in the `LandCover` folder and deletes the raw files
 ```{r eval = FALSE}
 summarise_landcover() 
 ```

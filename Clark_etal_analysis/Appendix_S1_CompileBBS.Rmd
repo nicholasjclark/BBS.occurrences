@@ -1,6 +1,6 @@
 ---
 title: "Appendix S1 - Compiling NA BBS Observations"
-author: "Nicholas J Clark, David J. Harris, Ceridwen Fraser"
+author: "Nicholas J Clark, David J Harris, Ceridwen Fraser"
 output:
   pdf_document:
     highlight: zenburn
@@ -27,11 +27,13 @@ Add BirdTree.org species names and eliminate records of unrecognised species
 ```{r eval = FALSE}
 # install.packages("devtools")
 devtools::install_github("nicholasjclark/BBS.occurrences")
+library(BBS.occurrences)
 species.df <- validateSpecies(species.df)
 ```
 
-Save the dataset
+Save the dataset to a new folder
 ```{r eval = FALSE}
+dir.create('./BBS.Data.cleaned')
 save(species.df, file = "./BBS.Data.cleaned/USA.BBS.2003cleaned.Rdata")
 ```
 
