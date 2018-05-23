@@ -12,6 +12,8 @@ library(knitr)
 opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
 ```
 
+This appendix describes how to extract landcover variables for each BBS survey site. These variables can be accessed in the `BBS.occurrences` library using `data('Site.descriptors')`.  
+  
 If need be, install the `MODISTools2` package. Please note that older versions of `MODISTools` may have problems with broken links! We have found it is better to remove old versions first and install the most up-to-date version
 ```{r eval = FALSE}
 remove.packages('MODISTools')
@@ -38,8 +40,8 @@ Find unique sites
 ```{r eval = FALSE}
 library(dplyr)
 uniq.coordinates = coordinates %>%
-  group_by(lat, long) %>%
-  distinct()
+  dplyr::group_by(lat, long) %>%
+  dplyr::distinct()
 ```
 
 Source functions needed for MODIS downloading and processing from NJ Clark's `GitHub` account
@@ -54,7 +56,7 @@ download_landcover(years_gather = c(2003:2009),
                    coordinates = uniq.coordinates[1:100, ])
 ```
 
-Repeat the above function until all of the necessary files have been downloaded. Once ALL of the necessary files are downloaded, then summarise them and calculate proportions of landcover. But please note, you should not summarise before all necessary raw files are downloaded (raw files will get deleted once the function completes in order to save memory!). This function writes a `.csv` summary file (containing proportional cover for a range of habitat categories) in the `LandCover` folder and deletes the raw files
+Repeat the above function until all of the necessary files have been downloaded. Once ALL of the necessary files are downloaded, then summarise them and calculate proportions of landcover. But please note, you should not summarise before all necessary raw files are downloaded (raw files will get deleted once the function completes in order to save memory!). This function writes a `.csv` summary file (containing proportional cover for a range of habitat categories) in the `LandCover` folder and deletes the raw files. Note, these landcover variables can be directly accessed in the `BBS.occurrences` library using `data('Site.descriptors')`.
 ```{r eval = FALSE}
 summarise_landcover() 
 ```

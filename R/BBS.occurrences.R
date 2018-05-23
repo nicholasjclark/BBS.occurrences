@@ -9,7 +9,7 @@
 #' cleaned and filtered to only include species with names matching to
 #' BirdTree.org using \code{validateSpecies.R}
 #'
-#' @format A \code{data.frame} objects with 15863 rows each, where each row lists the
+#' @format A \code{data.frame} object with 15863 rows, where each row lists the
 #' binary occurrences of 303 avian species (stored in columns) across sites. Row order
 #' matches the row orders in the \code{Site.descriptors} and \code{BBS.abundaneces} datafiles
 #'

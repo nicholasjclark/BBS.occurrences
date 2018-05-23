@@ -12,6 +12,8 @@ library(knitr)
 opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
 ```
 
+This appendix describes how to extract flyway grouping variables for each BBS survey site. These variables can be accessed in the `BBS.occurrences` library using `data('Site.descriptors')`.  
+  
 Load the cleaned BBS survey dataset that was prepared in `Appendix S1`
 ```{r eval = FALSE}
 load("./BBS.Data.cleaned/BBS.2003-2009.filtered.Rdata")
@@ -79,8 +81,8 @@ Site.descriptors = Site.descriptors %>%
                                       'Longitude' = 'lon'))
 ```
 
-Save the grouped descriptor data for downstream analysis
+Save the grouped descriptor data for downstream analysis. Note, the flyway variables can be directly accessed in the `BBS.occurrences` library using `data('Site.descriptors')`.
 ```{r eval = FALSE}
 dir.create('./Analysis_data')
-save(Site.descriptors file = './Analysis_data/Site.descriptors.Rdata')
+save(Site.descriptors, file = './Analysis_data/Site.descriptors.Rdata')
 ```

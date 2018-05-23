@@ -12,6 +12,8 @@ library(knitr)
 opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
 ```
 
+This appendix describes how to extract the presence-absence and abundance datasets that can be accessed in the `BBS.occurrences` library using `data('BBS.occurrences')` and `data('BBS.abundances')`. It also demonstrates how to store latitude and longitude data needed for generating landcover and flyway variables for each site (accessed in the `BBS.occurrences` library using `data('Site.descriptors')`).  
+  
 Specify the years to gather North American Breeding Bird Survey (BBS) data. Note, crashes can sometimes occur when using multiple years. We found it is best to run the below functions separately for each year and save the resulting object as an `.Rdata` file. You can then bring all saved files in as a list and compile them at once (see below for methods to filter and compile)
 ```{r eval = FALSE}
 year <- 2003
@@ -23,7 +25,7 @@ Gather the full dataset of BBS observations from USA (840) for the specified yea
 species.df <- pullBBS::pullBBS(year = year, country = 840, useCache = T)
 ```
 
-Add BirdTree.org species names and eliminate records of unrecognised species
+Add species names in [Birdtree.org](http://birdtree.org/) format and eliminate records of unrecognised species
 ```{r eval = FALSE}
 # install.packages("devtools")
 devtools::install_github("nicholasjclark/BBS.occurrences")
@@ -50,6 +52,8 @@ names(mylist) <- all.files
 species.df <- do.call("rbind", mylist)
 ```
 
+\pagebreak
+
 BBS runs are only valid if `RunType == 1` and if `Run protocol (RPID) == 101`. In addition, only `RouteTypeDetailID == 1` and `RouteTypeDetailID == 2` are considered random. We filter to match these conditions, and add a `ydays` numeric variable observation for the day
 ```{r eval = FALSE}
 # install.packages("dplyr")
@@ -65,8 +69,6 @@ species.df = species.df %>%
   dplyr::mutate(start.times = as.numeric(as.difftime(
       lubridate::hm(gsub("^(.)(.*)$", "\\1:\\2", StartTime)))) / 60 / 60)
 ```
-
-\pagebreak
 
 We can now create site by species abundance and occurrence matrices 
 ```{r eval = FALSE}
@@ -103,7 +105,7 @@ sites.df <- sites.df[match(rownames(route.abundance),
                            sites.df$RouteDataID),]
 ```
 
-Save the matrices, site-level data and a matrix of lats and longs (for downloading `MODIS` landcover data)
+Save the matrices, site-level data and a matrix of lats and longs (for downloading `MODIS` landcover data). Note, these presence-absence and abundance datasets can be directly accessed in the `BBS.occurrences` library using `data('BBS.occurrences')` and `data('BBS.abundances')`
 ```{r eval = FALSE}
 latlon <- cbind(sites.df$Longitude, sites.df$Latitude)
 save(

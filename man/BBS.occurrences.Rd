@@ -5,7 +5,7 @@
 \alias{BBS.occurrences}
 \title{Compiled data on avian species occurrences at NA BBS sites from
 2003 to 2009.}
-\format{A \code{data.frame} objects with 15863 rows each, where each row lists the
+\format{A \code{data.frame} object with 15863 rows, where each row lists the
 binary occurrences of 303 avian species (stored in columns) across sites. Row order
 matches the row orders in the \code{Site.descriptors} and \code{BBS.abundaneces} datafiles}
 \usage{

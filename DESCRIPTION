@@ -10,12 +10,15 @@ ByteCompile: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.0.1
 LazyData: TRUE
+Depends: R (>= 3.3.3)
 Imports: stringr,
     dplyr,
     magrittr,
+    ade4
 Suggests: testthat,
     knitr, 
-    rmarkdown
+    rmarkdown,
+    ape
 VignetteBuilder: knitr
 URL: https://github.com/nicholasjclark/BBS.occurrences
 BugReports: https://github.com/nicholasjclark/BBS.occurrences/issues
