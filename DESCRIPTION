@@ -14,11 +14,17 @@ Depends: R (>= 3.3.3)
 Imports: stringr,
     dplyr,
     magrittr,
-    ade4
+    ade4,
+    parallel,
+    pbapply,
+    raster,
+    sf
 Suggests: testthat,
     knitr, 
     rmarkdown,
     ape
+Remotes: nicholasjclark/MRFcov,
+    ropensci/prism
 VignetteBuilder: knitr
 URL: https://github.com/nicholasjclark/BBS.occurrences
 BugReports: https://github.com/nicholasjclark/BBS.occurrences/issues

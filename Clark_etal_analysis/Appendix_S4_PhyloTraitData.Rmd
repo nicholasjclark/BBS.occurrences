@@ -86,7 +86,7 @@ diet.dat <- sp.traits[, c(10:19)]
 rownames(diet.dat) <- sp.traits$Scientific
 ```
 
-Use these diet and foraging trait datasets to calculate a Gower's distance matrix. Because these are proportional variables, we use the `prep.fuzzy` argument to creating the mixed variable distance coefficient
+Use these diet and foraging trait datasets to calculate a Gower's distance matrix. Because these are proportional variables, we use the `prep.fuzzy` argument to calculate the mixed variable distance coefficient
 ```{r eval = FALSE}
 sp.ecol.distances <- prepDendrograms(func.datasets = list(hab.dat, diet.dat),
                                        prep.types = c('prep.fuzzy', 'prep.fuzzy'))

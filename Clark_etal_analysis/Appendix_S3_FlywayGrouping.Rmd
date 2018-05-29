@@ -79,6 +79,7 @@ point_site.groups = Site.descriptors %>%
 Site.descriptors = Site.descriptors %>%
   left_join(point_site.groups, by = c('Latitude' = 'lat',
                                       'Longitude' = 'lon'))
+colnames(Site.descriptors) <- stringr::str_to_title(colnames(Site.descriptors))
 ```
 
 Save the grouped descriptor data for downstream analysis. Note, the flyway variables can be directly accessed in the `BBS.occurrences` library using `data('Site.descriptors')`.

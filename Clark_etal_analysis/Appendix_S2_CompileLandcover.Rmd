@@ -12,7 +12,7 @@ library(knitr)
 opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
 ```
 
-This appendix describes how to extract landcover variables for each BBS survey site. These variables can be accessed in the `BBS.occurrences` library using `data('Site.descriptors')`.  
+This appendix describes how to extract landcover variables at 40km resolution for each BBS survey site. These variables can be accessed in the `BBS.occurrences` library using `data('Site.descriptors')`.  
   
 If need be, install the `MODISTools2` package. Please note that older versions of `MODISTools` may have problems with broken links! We have found it is better to remove old versions first and install the most up-to-date version
 ```{r eval = FALSE}
@@ -53,7 +53,8 @@ source("https://raw.githubusercontent.com/nicholasjclark/
 Download data for the specified years (but don't include years 2010-2012, these are not accessible). This stores the raw downloaded data in a new `LandCover` folder within your working directory. Note that the input `coordinates` file must have colnames `lat` and `long`. Also note that landcover downloads struggle if we access more than ~100 points at a time (depending on your system). Downloading multiple subsets over time is safer
 ```{r eval = FALSE}
 download_landcover(years_gather = c(2003:2009), 
-                   coordinates = uniq.coordinates[1:100, ])
+                   coordinates = uniq.coordinates[1:100, ],
+                   size = c(40,40))
 ```
 
 Repeat the above function until all of the necessary files have been downloaded. Once ALL of the necessary files are downloaded, then summarise them and calculate proportions of landcover. But please note, you should not summarise before all necessary raw files are downloaded (raw files will get deleted once the function completes in order to save memory!). This function writes a `.csv` summary file (containing proportional cover for a range of habitat categories) in the `LandCover` folder and deletes the raw files. Note, these landcover variables can be directly accessed in the `BBS.occurrences` library using `data('Site.descriptors')`.
