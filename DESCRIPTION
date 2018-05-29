@@ -17,12 +17,12 @@ Imports: stringr,
     ade4,
     parallel,
     pbapply,
-    raster,
-    sf
+    raster
 Suggests: testthat,
     knitr, 
     rmarkdown,
-    ape
+    ape, 
+    sf
 Remotes: nicholasjclark/MRFcov,
     ropensci/prism
 VignetteBuilder: knitr
