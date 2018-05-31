@@ -249,7 +249,7 @@ lassoAbund_comm = function(outcome_data, binary_data, outcome_indices,
                               covariates = predictors,
                               cutoff = cutoff,
                               n_reps = n_reps)
-    })
+    }, cl = cl)
     stopCluster(cl)
     names(cv_mods) <- colnames(outcome_data)[outcome_indices]
 

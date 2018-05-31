@@ -224,7 +224,7 @@ lassoBinomial_comm = function(outcome_data, count_data, outcome_indices,
                               covariates = as.matrix(predictors),
                               cutoff = cutoff,
                               n_reps = n_reps)
-    })
+    }, cl = cl)
     stopCluster(cl)
     names(cv_mods) <- colnames(outcome_data)[outcome_indices]
 
