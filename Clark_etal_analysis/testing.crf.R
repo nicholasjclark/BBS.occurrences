@@ -1,12 +1,12 @@
-#'Perform LASSO regularized logistic regressions to model the process
-#'that generates zeros and non-zeros in species abundance data
+#'Perform LASSO regularized gaussian regressions to model the process
+#'that governs species' abundances
 #'
-#'\code{lassoBinomial} runs cross-validated regularized regressions for a single species
+#'\code{lassoGaussian} runs cross-validated regularized regressions for a single species
 #'and returns important coefficients
 #'
 #'@importFrom magrittr %>%
 #'
-#'@param response A \code{vector} of binary presence-absence observations for the
+#'@param response A \code{vector} of count observations for the
 #'focal species
 #'@param covariates A \code{matrix} of covariates, with \code{nrow(covariates) == nrow(response)}
 #'@param cutoff Positive numeric value representing the proportion of models in which
@@ -21,7 +21,7 @@
 #'@seealso \code{\link[glmnet]{cv.glmnet}}
 #'
 #'@details Regularized regressions are performed to identify meaningful predictors of
-#'the species' occurrence probability using \code{\link[glmnet]{cv.glmnet}}. These models
+#'the species' scaled abundance using \code{\link[glmnet]{cv.glmnet}}. These models
 #'use coordinated gradient descent, applied to training sets of the data, to identify
 #'regression parameters. These parameters are predicted on the remaining subset of the data
 #'(the test set) to assess model fit. The process is repeated until a best-fitting model
@@ -30,15 +30,15 @@
 #'generating process and can more confidently identify meaningful predictors (i.e. those that
 #'are retained in at least \code{cutoff} proportion of \code{n_reps} models)
 #'
-#'@return \code{lassoBinomial} returns a single \code{vector} of coefficients for
+#'@return \code{lassoGaussian} returns a single \code{vector} of coefficients for
 #'predictors in \code{covariates}. \cr\cr
-#'\code{lassoBinomial_comm} binds these vectors into a
+#'\code{lassoAbund_comm} binds these coefficient vectors into a
 #'\code{dataframe} with rownames matching species names in \code{outcome_data}. It then
 #'returns a \code{list} containing coefficients and scaling factors, which are used
 #'in predictive functions
 #'
 #'@export
-lassoBinomial = function(response, covariates, cutoff, n_reps){
+lassoGaussian = function(response, covariates, cutoff, n_reps){
 
   #### Specify default values ####
   if(missing(n_reps)){
@@ -54,8 +54,8 @@ lassoBinomial = function(response, covariates, cutoff, n_reps){
   #fold generation
   cv.lasso <- lapply(seq_len(n_reps), function(x){
     cv.mod <- glmnet::cv.glmnet(y = response,
-                                x = covariates,
-                                nfolds = 10, family = "binomial",
+                                x = as.matrix(covariates),
+                                nfolds = 10, family = "gaussian",
                                 weights = rep(1, nrow(covariates)),
                                 intercept = TRUE, standardize = TRUE)
     coef(cv.mod)
@@ -73,10 +73,10 @@ lassoBinomial = function(response, covariates, cutoff, n_reps){
                                                   as.data.frame)) %>%
                               dplyr::group_by(parameter) %>%
                               dplyr::mutate(prop.retained = length(which(coef != 0)) / n_reps,
-                                     mean.coef = mean(coef)) %>%
+                                            mean.coef = mean(coef)) %>%
                               dplyr::rowwise() %>%
                               dplyr::mutate(mean.coef = ifelse(prop.retained >= cutoff,
-                                                        mean.coef, 0)) %>%
+                                                               mean.coef, 0)) %>%
                               dplyr::ungroup() %>%
                               dplyr::select(parameter, mean.coef) %>%
                               dplyr::mutate_at(dplyr::vars(parameter), as.character) %>%
@@ -91,29 +91,28 @@ lassoBinomial = function(response, covariates, cutoff, n_reps){
 }
 
 
-
-#'\code{lassoBinomial_comm} runs the lassoBinomial function across multiple species
+#'\code{lassoAbund_comm} runs the lassoGaussian function across multiple species
 #'in a community dataset
 #'@importFrom parallel makePSOCKcluster setDefaultCluster clusterExport stopCluster clusterEvalQ detectCores parLapply
 #'
-#'@param outcome_data A \code{dataframe} containing binary presence-absence observations
+#'@param outcome_data A \code{dataframe} containing count observations
 #'for species (each column representing a different species)
-#'@param count_data A \code{dataframe} containing count observations
+#'@param binary_data A \code{dataframe} containing binary presence-absence observations
 #'for species (each column representing a different species)
 #'@param outcome_indices A sequence of positive integers representing the column indices in
-#'\code{outcome_data} that are to be modelled as binary outcome variables (i.e. species
-#'occurrence observations). Each one of these columns will be treated as a separate species whose
-#'occurrence probability is to be modelled using \code{lassoBinomial}. Default is to run models
+#'\code{outcome_data} that are to be modelled as poisson outcome variables (i.e. species
+#'counts). Each one of these columns will be treated as a separate species whose
+#'abundance is to be modelled using \code{lassoGaussian}. Default is to run models
 #'for all columns in \code{outcome_data}
 #'@param n_cores Positive integer stating the number of processing cores to split the job across.
 #'Default is \code{parallel::detect_cores() - 1}
 #'
-#'@inheritParams lassoBinomial
-#'@rdname lassoBinomial
+#'@inheritParams lassoGaussian
+#'@rdname lassoGaussian
 #'
 #'
 #'@export
-lassoBinomial_comm = function(outcome_data, count_data, outcome_indices,
+lassoAbund_comm = function(outcome_data, binary_data, outcome_indices,
                               covariates, cutoff, n_reps, n_cores){
 
   #### Specify default values ####
@@ -134,21 +133,24 @@ lassoBinomial_comm = function(outcome_data, count_data, outcome_indices,
   }
 
   #### Use sqrt mean transformation for Poisson variables ####
-  square_root_mean = function(x) {sqrt(mean(x ^ 2))}
-  poiss_sc_factors <- apply(count_data, 2, square_root_mean)
-  count_data <- apply(count_data, 2,
-                        function(x) x / square_root_mean(x))
-  family <- 'gaussian'
+    square_root_mean = function(x) {sqrt(mean(x ^ 2))}
+    poiss_sc_factors <- apply(outcome_data, 2, square_root_mean)
+    outcome_data <- apply(outcome_data, 2,
+                               function(x) x / square_root_mean(x))
+    family <- 'gaussian'
 
-  covariates <- cbind(count_data, covariates)
+  covariates <- cbind(outcome_data, covariates)
 
   #### For each outcome species, remove those species that infrequently (or never)
   # co-occur as possible predictors ####
-  remain_vars <- lapply(seq_len(ncol(outcome_data)), function(x){
-    co.occurs <- colSums(outcome_data[which(outcome_data[,x] == 1),])
-    co.occurs <- ifelse(co.occurs > (nrow(outcome_data[which(outcome_data[,x] == 1),]) / 10),
+  remain_vars <- lapply(seq_len(ncol(binary_data)), function(x){
+    co.occurs <- colSums(binary_data[which(binary_data[,x] == 1),])
+    co.occurs <- ifelse(co.occurs > (nrow(binary_data[which(binary_data[,x] == 1), ]) / 10),
                         TRUE, FALSE)
   })
+  prepped_covariates <- MRFcov::prep_MRF_covariates(covariates,
+                                                    n_nodes = ncol(outcome_data))
+
 
   #### If n_cores > 1, check parallel library loading ####
   if(n_cores > 1){
@@ -203,25 +205,45 @@ lassoBinomial_comm = function(outcome_data, count_data, outcome_indices,
 
     #Export necessary data and variables to each cluster
     clusterExport(NULL, c('outcome_indices', 'outcome_data',
-                          'covariates', 'n_reps', 'remain_vars'),
+                          'covariates', 'n_reps', 'remain_vars',
+                          'prepped_covariates'),
                   envir = environment())
 
     #Export necessary functions to each cluster
-    clusterExport(NULL, c('lassoBinomial'))
+    clusterExport(NULL, c('lassoGaussian'))
 
     #Export necessary libraries
     clusterEvalQ(cl, library(dplyr))
     clusterEvalQ(cl, library(glmnet))
 
-    #### Perform lasso_binomial function for each outcome variable ####
+    #### Perform lasso_gaussian function for each outcome variable ####
     cv_mods <- pbapply::pblapply(outcome_indices, function(x){
 
-      #Make sure the focal species and infrequent co-occurring species are not present in covariates
-      mod.covariates <- covariates[, remain_vars[[x]]]
-      predictors <- mod.covariates[, -which(grepl(colnames(outcome_data)[x],
-                                                  colnames(mod.covariates)) == T)]
-      result <- lassoBinomial(response = outcome_data[, x],
-                              covariates = as.matrix(predictors),
+       #Make sure the focal species and infrequent co-occurring species are not present in covariates
+      names_drop <- names(which(remain_vars[[x]] == FALSE))
+      vars_drop <- lapply(seq_along(names_drop), function(j){
+        vars_drop <- which(grepl(names_drop[j],
+                                 colnames(prepped_covariates)) == TRUE)
+      })
+      all_vars_drop <- unique(unlist(vars_drop))
+
+      if(is.null(all_vars_drop)){
+        predictors <- prepped_covariates
+      } else {
+        predictors <- prepped_covariates[, -all_vars_drop]
+      }
+
+      predictors <- predictors[, -which(grepl(colnames(outcome_data)[x],
+                                              colnames(predictors)) == T)]
+
+      # Filter outcome and predictor datasets to only asses observations in which
+      # the target species' abundance was greater than zero
+      rows_keep <- which(outcome_data[, x] > 0)
+      outcome_vector <- outcome_data[rows_keep, x]
+      predictors <- predictors[rows_keep, ]
+
+      result <- lassoGaussian(response = outcome_vector,
+                              covariates = predictors,
                               cutoff = cutoff,
                               n_reps = n_reps)
     })
@@ -231,12 +253,33 @@ lassoBinomial_comm = function(outcome_data, count_data, outcome_indices,
   } else {
     #### If parallel loading fails, use lapply instead (may crash!)
     cv_mods <- pbapply::pblapply(outcome_indices, function(x){
-      mod.covariates <- covariates[, remain_vars[[x]]]
-      predictors <- mod.covariates[, -which(grepl(colnames(outcome_data)[x],
-                                                  colnames(mod.covariates)) == T)]
 
-      result <- lassoBinomial(response = outcome_data[, x],
-                              covariates = as.matrix(predictors),
+      # Remove species that do not co-occur frequently as possible predictors
+      names_drop <- names(which(remain_vars[[x]] == FALSE))
+      vars_drop <- lapply(seq_along(names_drop), function(j){
+        vars_drop <- which(grepl(names_drop[j],
+                                 colnames(prepped_covariates)) == TRUE)
+      })
+      all_vars_drop <- unique(unlist(vars_drop))
+
+      if(is.null(all_vars_drop)){
+        predictors <- prepped_covariates
+      } else {
+        predictors <- prepped_covariates[, -all_vars_drop]
+      }
+
+      predictors <- predictors[, -which(grepl(colnames(outcome_data)[x],
+                                                  colnames(predictors)) == T)]
+
+      # Filter outcome and predictor datasets to only asses observations in which
+      # the target species' abundance was greater than zero
+      rows_keep <- which(outcome_data[, x] > 0)
+      outcome_vector <- outcome_data[rows_keep, x]
+      predictors <- predictors[rows_keep, ]
+
+      # Run the models
+      result <- lassoGaussian(response = outcome_vector,
+                              covariates = predictors,
                               cutoff = cutoff,
                               n_reps = n_reps)
     })
@@ -246,19 +289,9 @@ lassoBinomial_comm = function(outcome_data, count_data, outcome_indices,
   #### Bind resulting model coefficient vectors into a dataframe and return ####
   results <- dplyr::bind_rows(lapply(cv_mods, function(x){
     as.data.frame(t(x))
-    }))
-
-  # Add extra row with all columns in case some predictors are missing from all
-  # models
-  all_preds <- data.frame(t(rep(0, length(c('(Intercept)', colnames(covariates))))))
-  colnames(all_preds) <- c('(Intercept)', colnames(covariates))
-
-  results <- dplyr::bind_rows(all_preds, results)[-1, ]
-  rownames(results) <- names(cv_mods)
-
-  column_order <- c('(Intercept)', colnames(covariates))
-  results <- results[, column_order]
+  }))
   results[is.na(results)] <- 0
+  rownames(results) <- names(cv_mods)
 
   return(list(Coefficients = results,
               scaling.factors = poiss_sc_factors))

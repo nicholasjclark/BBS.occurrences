@@ -36,6 +36,7 @@ data("Site.descriptors")
 
 We need to extract unique sample sites and convert these points to a spatial dataframe so that they can be intersected with the `prism` rasters
 ```{r eval = FALSE}
+# install.packages('sp')
 library(dplyr)
 points <- Site.descriptors %>%
   dplyr::ungroup() %>%

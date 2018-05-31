@@ -1,0 +1,39 @@
+---
+title: "Appendix S6 - Extract Storm Data"
+author: "Nicholas J Clark, David J Harris, Ceridwen Fraser"
+output:
+  pdf_document:
+    highlight: zenburn
+urlcolor: blue
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
+```
+
+This appendix describes how to extract data on storm disturbances by county across time. These variables can be accessed in the `BBS.occurrences` library using `data('Site.descriptors')`.  
+```{r eval = FALSE}
+if(!file.exists("StormData.csv")) {
+download.file(url="https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2",
+              destfile = "StormData.csv.bz2")
+  R.utils::bunzip2(filename = "StormData.csv.bz2", destname = "StormData.csv", remove = TRUE)
+  }
+```
+
+Read in the downloaded `.csv` file
+```{r eval = FALSE}
+ Storm.data.raw <- data.table::fread('StormData.csv')
+```
+
+Because the dataset has over 900,000 rows in its original form, we process the data by categorising storm events into recognised categories, cleaning state and county names and then returning data only on the most damaging storms (controlled by the argument `damage.threshold`). Note, this function also only returns data on weather events that are likely to cause widespread disturbances to natural communities (including thunderstorm, heave winds, hail, tornados, heave rain, fire, drought, and tropical storms). Here, we return the top 33% of the most damaging storms that fall into these categories
+```{r eval = FALSE}
+library(BBS.occurrences)
+Storm.data <- cleanStormData(Stormdata.raw = Storm.data.raw, damage.threshold = .33)
+```
+
+```{r eval = FALSE}
+save(Storm.data,
+     file = './Analysis_data/Storm.data.Rdata')
+```
+

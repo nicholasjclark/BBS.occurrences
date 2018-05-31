@@ -1,4 +1,4 @@
-
+library(BBS.occurrences)
 data("BBS.occurrences")
 data("BBS.abundances")
 data("Site.descriptors")
@@ -27,11 +27,17 @@ Miss.covs <- as.data.frame(Miss.covs[!row.has.na, ])
 Miss.bin <- as.data.frame(Miss.bin[!row.has.na, ])
 Miss.abund <- as.data.frame(Miss.abund[!row.has.na, ])
 
-Miss.covs.biotic <- cbind(Miss.covs, Miss.bin[,c(1:10)])
+Miss.covs.biotic <- cbind(Miss.covs, Miss.bin)
 
-begin <- Sys.time()
-test <- lassoBinomial_comm(outcome_data = Miss.bin,
-                           outcome_indices = c(1:10),
+Miss.bin.mod <- lassoBinomial_comm(outcome_data = Miss.bin,
                            covariates = as.matrix(Miss.covs.biotic),
                            n_reps = 5)
-Sys.time() - begin
+
+save(Miss.bin.mod, file = './BBS_results/Miss.bin.mod.rda')
+
+Miss.covs.biotic.abund <- cbind(Miss.covs, Miss.abund)
+
+Miss.abund.mod <- lassoBinomial_comm(outcome_data = Miss.bin,
+                                   covariates = as.matrix(Miss.covs.biotic.abund),
+                                   n_reps = 5)
+save(Miss.abund.mod, file = './BBS_results/Miss.bin.mod.rda')

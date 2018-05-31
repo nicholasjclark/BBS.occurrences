@@ -4,13 +4,17 @@
 \name{Site.descriptors}
 \alias{Site.descriptors}
 \title{Site - level covariates for the NA BBS observations}
-\format{A \code{data.frame} containing 34 variables describing
+\format{A \code{data.frame} containing 46 variables describing
 covariates and other descriptors for the individual BBS observations. Variables
 include standardised information gathered by BBS (i.e. route IDs, temperatures, times,
 etc...) as well as GPS coordinates and percent cover for a range of
-landcover covariates. Landcover variables were accessed at 10 x 10km resolution, downloaded
+landcover covariates. Landcover variables were accessed at 40km resolution, downloaded
 from MODIS Landcover Type 1, product MCD12Q1. See scripts at
-https://github.com/nicholasjclark/LandcoverMODIS for more details on MODIS downloads}
+https://github.com/nicholasjclark/LandcoverMODIS for more details on MODIS downloads. PRISM
+climate variables were downloaded at 40km resolution using
+\code{\link[prism]{get_prism_monthlys}} and coerced into lagged variables representing
+climate conditions over the previous Spring (March - May) and over the previous year
+(July - June) before sampling occurred}
 \usage{
 data(Site.descriptors)
 }
