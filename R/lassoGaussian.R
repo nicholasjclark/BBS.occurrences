@@ -147,10 +147,10 @@ lassoAbund_comm = function(outcome_data, binary_data, outcome_indices,
   covariates <- cbind(outcome_data, covariates)
 
   #### For each outcome species, remove those species that infrequently (or never)
-  # co-occur as possible predictors ####
+  # co-occur as possible predictors of abundance ####
   remain_vars <- lapply(seq_len(ncol(binary_data)), function(x){
     co.occurs <- colSums(binary_data[which(binary_data[,x] == 1),])
-    co.occurs <- ifelse(co.occurs > (nrow(binary_data[which(binary_data[,x] == 1), ]) / 5),
+    co.occurs <- ifelse(co.occurs > (nrow(binary_data[which(binary_data[,x] == 1), ]) / 10),
                         TRUE, FALSE)
   })
   prepped_covariates <- MRFcov::prep_MRF_covariates(covariates,

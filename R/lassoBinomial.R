@@ -146,7 +146,7 @@ lassoBinomial_comm = function(outcome_data, count_data, outcome_indices,
   covariates <- cbind(count_data, covariates)
 
   #### For each outcome species, remove those species that infrequently (or never)
-  # co-occur as possible predictors ####
+  # co-occur as possible predictors of occurrence probability ####
   remain_vars <- lapply(seq_len(ncol(outcome_data)), function(x){
     co.occurs <- colSums(outcome_data[which(outcome_data[,x] == 1),])
     co.occurs <- ifelse(co.occurs > (nrow(outcome_data[which(outcome_data[,x] == 1),]) / 10),
