@@ -13,6 +13,7 @@ Storm.type and geographrical coordinates}
 data(Storm.data)
 }
 \description{
-Descriptions and locations of damaging storms in the USA
+A dataset on storm events was accessed from NOAA and processed using regex
+to categorise storms into categories. The entire workflow is shown in the \code{Appendix 6} script.
 }
 \keyword{datasets}

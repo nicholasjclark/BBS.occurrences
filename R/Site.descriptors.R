@@ -1,5 +1,8 @@
 #' Site - level covariates for the NA BBS observations
 #'
+#' A dataset on site-level predictors for observations in \code{BBS.occurrences} and
+#' \code{BBS.abundances} was compiled from multiple sources. The workflows for generating this dataset
+#' are shown in \code{Appendices 1, 2, 3, 5}
 #'
 #' @format A \code{data.frame} containing 46 variables describing
 #' covariates and other descriptors for the individual BBS observations. Variables

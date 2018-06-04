@@ -22,7 +22,11 @@ Suggests: testthat,
     knitr, 
     rmarkdown,
     ape, 
-    sf
+    sf,
+    tidyverse,
+    rvest,
+    httr,
+    purrr
 Remotes: nicholasjclark/MRFcov,
     ropensci/prism
 VignetteBuilder: knitr

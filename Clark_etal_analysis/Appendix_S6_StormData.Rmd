@@ -12,10 +12,13 @@ library(knitr)
 opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
 ```
 
-This appendix describes how to extract data on storm disturbances by county across time. These variables can be accessed in the `BBS.occurrences` library using `data('Site.descriptors')`.  
+This appendix describes how to extract data on storm disturbances by county across time. These storm occurrences can be accessed in the `BBS.occurrences` library using `data('Storm.data')`.  
+  
+Download the NOAA storm dataset and unzip into a `.csv` file
 ```{r eval = FALSE}
 if(!file.exists("StormData.csv")) {
-download.file(url="https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2",
+  url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+download.file(url= url,
               destfile = "StormData.csv.bz2")
   R.utils::bunzip2(filename = "StormData.csv.bz2", destname = "StormData.csv", remove = TRUE)
   }
@@ -32,6 +35,7 @@ library(BBS.occurrences)
 Storm.data <- cleanStormData(Stormdata.raw = Storm.data.raw, damage.threshold = .33)
 ```
 
+Save the processed storm data in the `Analysis` folder. Note, these storm occurrences can be accessed in the `BBS.occurrences` library using `data('Storm.data')`.  
 ```{r eval = FALSE}
 save(Storm.data,
      file = './Analysis_data/Storm.data.Rdata')

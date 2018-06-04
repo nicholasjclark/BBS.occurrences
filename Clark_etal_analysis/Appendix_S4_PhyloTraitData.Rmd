@@ -14,7 +14,7 @@ opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
 
 This appendix describes how to calculate species' pairwise phylogenetic and functional distance matrices. These matrices can be accessed in the `BBS.occurrences` library using `data('Bird.phy.distances')` and `data('Bird.ecol.distances')`.  
   
-Load the species occurrnce dataset, which lists the binary occurrences of 303 avian species (stored in columns) across sites
+Load the species occurrence dataset, which lists the binary occurrences of 303 avian species (stored in columns) across sites
 ```{r eval = FALSE}
 load("./BBS.Data.cleaned/BBS.2003-2009.filtered.Rdata")
 BBS.occurrences <- route.presence.absence
