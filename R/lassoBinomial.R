@@ -133,7 +133,7 @@ lassoBinomial_comm = function(outcome_data, count_data, outcome_indices,
   }
 
   if(missing(n_cores)){
-    n_cores <- detectCores() - 1
+    n_cores <- parallel::detectCores() - 1
   }
 
   #### Use sqrt mean transformation for Poisson variables ####
