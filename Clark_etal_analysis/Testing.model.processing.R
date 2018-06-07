@@ -1,6 +1,5 @@
 plotBinomial(lassoBinomial = Miss.bin.mod, cutoff = 0.05)
 
-
 ## Repeat for abundances
 abund.coefs <- Miss.crf.mod$direct_coefs[, sp.names]
 abund.influence.vec <- abund.coefs[upper.tri(abund.coefs)]

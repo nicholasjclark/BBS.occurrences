@@ -1,0 +1,8 @@
+#!/bin/bash
+#PBS -A UQ-SCI-VetSchool
+#PBS -q workq
+#PBS -l select=1:ncpus=24:mem=120GB
+#PBS -l walltime=12:00:00
+cd $PBS_O_WORKDIR
+module load R
+R CMD BATCH Binhurdle.R

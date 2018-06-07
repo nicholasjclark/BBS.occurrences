@@ -54,13 +54,26 @@ lassoBinomial = function(response, covariates, cutoff, n_reps){
   #fold generation
   cv.lasso <- lapply(seq_len(n_reps), function(x){
     lambda <- rev(seq(0.001, 1, length.out = 100))
-    cv.mod <- glmnet::cv.glmnet(y = response,
+    cv.mod <- try(glmnet::cv.glmnet(y = response,
                                 x = covariates,
                                 nfolds = 10, family = "binomial",
                                 weights = rep(1, nrow(covariates)),
                                 intercept = TRUE, standardize = TRUE,
                                 lambda = lambda,
-                                maxit = 25000)
+                                maxit = 25000), silent = TRUE)
+
+    # Errors may occur if 10-fold cv results in some folds with few 1s
+    # If so, use 20-fold instead
+    if(class(cv.mod) == "try-error"){
+      cv.mod <- glmnet::cv.glmnet(y = response,
+                                  x = covariates,
+                                  nfolds = 20, family = "binomial",
+                                  weights = rep(1, nrow(covariates)),
+                                  intercept = TRUE, standardize = TRUE,
+                                  lambda = lambda,
+                                  maxit = 25000)
+    }
+
     coef(cv.mod)
 
     # Gather coefficients from the best-fitting model into a list
