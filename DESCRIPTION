@@ -20,7 +20,9 @@ Imports: stringr,
     raster,
     ggplot2,
     gridExtra,
-    grid
+    grid,
+    caret,
+    purrr
 Suggests: testthat,
     knitr, 
     rmarkdown,

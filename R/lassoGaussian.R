@@ -398,8 +398,10 @@ lassoAbund_comm = function(outcome_data, binary_data, outcome_indices,
 
   return(list(direct_coefs = results,
               graph = interaction_matrix_sym,
+              intercepts = results[, 1],
               indirect_coefs = indirect_coefs,
               poiss_sc_factors = poiss_sc_factors,
-              mod_type = "MRFcov"))
+              mod_type = "MRFcov",
+              mod_family = 'poisson'))
 }
 

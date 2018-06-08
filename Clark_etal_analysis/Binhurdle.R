@@ -35,6 +35,11 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
   region_bin <- region_bin[, -low_occur_cols]
   region_abund <- region_abund[, -low_occur_cols]
 
+  # Species that are too common cannot be assessed in occurrence models
+  high_occur_cols <- which((colSums(region_bin) / nrow(region_bin)) > 0.9)
+  region_bin_outcome <- region_bin[, -high_occur_cols]
+  region_abund_predict <- region_abund[, -high_occur_cols]
+
   # Remove un-needed rows from covariates data and extract climate / landcover covariates
   # note, year is not included as temporal autocorrelation will be
   # difficult to detect without at least 20 - 25 years worth of data
@@ -54,19 +59,56 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
   row_has_na <- apply(covariates, 1, function(x){any(is.na(x))})
   covariates <- as.data.frame(covariates[!row_has_na, ])
   region_bin <- as.data.frame(region_bin[!row_has_na, ])
+  region_bin_outcome <- as.data.frame(region_bin_outcome[!row_has_na, ])
   region_abund <- as.data.frame(region_abund[!row_has_na, ])
+  region_abund_predict <- as.data.frame(region_abund_predict[!row_has_na, ])
+
+  # Scale all continuous covariates so magnitudes of effects can be compared
+  covariates = data.frame(covariates %>%
+                            dplyr::mutate_if(is.numeric, funs(as.vector(scale(.)))))
 
   #### Run LASSO occurrence and abundance models ####
-  occurrence_mod <- lassoBinomial_comm(outcome_data = region_bin,
-                                     count_data = region_abund,
+  occurrence_mod <- lassoBinomial_comm(outcome_data = region_bin_outcome[, 1:5],
+                                     count_data = region_abund_predict[, 1:5],
                                      covariates = covariates,
-                                     n_reps = 10, n_cores = 24)
+                                     n_reps = 5, n_cores = 3)
 
   abundance_mod <- lassoAbund_comm(outcome_data = region_abund,
                                    binary_data = region_bin,
                                    covariates = covariates,
-                                   n_reps = 10, n_cores = 24)
-  list(occurrence_mod, abundance_mod)
+                                   n_reps = 20, n_cores = 24)
+
+  #### Calculate predictive metrics for the binomial model ####
+  occurrence_mets <- lassoBinomial_metrics(outcome_data = region_bin_outcome[, 1:5],
+                                           count_data = region_abund_predict[, 1:5],
+                                           covariates = covariates,
+                                           lassoBinomial = occurrence_mod)
+
+  #### Predict network centrality and assess model fit from abundance model ####
+  abundance_cent <- MRFcov::predict_MRFnetworks(data = cbind(region_abund, covariates),
+                                        MRF_mod = abundance_mod, metric = "degree")
+
+  abund_predictions <- MRFcov::predict_MRF(data = cbind(region_abund, covariates),
+                                           MRF_mod = abundance_mod)
+
+  abund_metrics <- MRFcov::cv_MRF_diag(data = cbind(region_abund, covariates),
+                                       n_nodes = nrow(abundance_mod$direct_coefs),
+                                       n_folds = 10, n_cores = 1, family = 'poisson',
+                                       compare_null = FALSE, plot = FALSE,
+                                       cached_model = list(mrf = abundance_mod),
+                                       cached_predictions = list(predictions = abund_predictions),
+                                       sample_seed = 1)
+
+  list(occurrence_mod = occurrence_mod,
+       occurrence_spec = quantile(occurrence_mets$mean_specificity,
+                                  probs = c(0.25, 0.5, 0.75)),
+       occurrence_sens = quantile(occurrence_mets$mean_sensitivity,
+                                  probs = c(0.25, 0.5, 0.75)),
+       abundance_mod = abundance_mod,
+       abundance_cent = abundance_cent,
+       abund_Rsquared = quantile(abund_metrics$Rsquared,
+                                 probs = c(0.25, 0.5, 0.75)),
+       removed_covs = removed_covs)
 })
 
 names(region_mods) <- unique_regions

@@ -276,6 +276,7 @@ lassoBinomial_comm = function(outcome_data, count_data, outcome_indices,
   results <- results[, column_order]
   results[is.na(results)] <- 0
 
-  return(list(Coefficients = results,
-              scaling.factors = poiss_sc_factors))
+  return(list(coefficients = results,
+              intercepts = results[, 1],
+              poiss_sc_factors = poiss_sc_factors))
 }

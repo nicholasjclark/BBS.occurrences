@@ -3,17 +3,18 @@
 #'
 #'
 #'
-#'@param lassoBinomial A model object returned from \code{lassoBinomial}
-#'@param cutoff Positive numeric value indicating the smallest magnitude a coefficient's
-#'absolute value should be to be considered as an important influence on
-#'occurrence probability. Default is \code{0.01}
+#'@param lassoBinomial A model object returned from \code{lassoBinomial_comm}
+#'@param cutoff Positive numeric value indicating the minimum quantile of biotic coefficients'
+#'absolute values (excluding \code{0}'s) that are considered as reflective of an
+#'important influence on occurrence probability. Default is \code{0.05}, meaning that the top 95
+#'percent of biotic coefficients are retained when performing the polynomial regression
 #'@details Species' pairwise influences on occurrence probabilities are extracted from
-#'\code{lassoBinomial$$Coefficients} and predicted
+#'\code{lassoBinomial$Coefficients} and predicted
 #'by their respective habitat niche and phylogenetic distances (extracted from
 #'\code{data("Bird.ecol.distances")} and \code{data("Bird.phy.distances")}) using
 #'a second-order polynomial regression of the form
 #'\code{lm(Influence ~ poly(Phy.dist,2) + poly(Ecol.dist,2))}. Only pairwise
-#'influences whose absolute magnitudes are above the specified \code{cutoff}
+#'influences whose absolute magnitudes are above the specified \code{cutoff} quantile
 #'are used in the regression
 #'@return A \code{ggplot2} object visualising predicted habitat niche and phylogenetic distance
 #'regression lines and 99% confidence intervals, along with the proportion of explained variance
@@ -21,10 +22,6 @@
 #'
 #'@export
 plotBinomial = function(lassoBinomial, cutoff){
-
-  if(missing(cutoff)){
-    cutoff <- 0.01
-  }
 
 #### Import phylogenetic and ecological distance datasets ####
 data("Bird.ecol.distances")
@@ -40,13 +37,24 @@ phy.dist.vec <- Bird.phy.distances[upper.tri(Bird.phy.distances)]
 
 ## Extract vector of occurrence influence coefficients
 occur.coefs <- lassoBinomial$Coefficients[, sp.names]
-occur.influence.vec <- occur.coefs[upper.tri(occur.coefs)]
+influence.vec <- occur.coefs[upper.tri(occur.coefs)]
+
+## Calculate quantiles of non-zero influence coefficients
+influence.vec <- influence.vec[which(influence.vec != 0)]
+
+if(missing(cutoff)){
+  cutoff <- as.numeric(quantile(abs(influence.vec),
+                                                 c(0.05)))
+} else {
+  cutoff <- as.numeric(quantile(abs(influence.vec),
+                                c(cutoff)))
+}
 
 ## Keep only the coefficients that are above the specified cutoff magnitude
-occur.nonzeros <- which(abs(occur.influence.vec) > cutoff)
+occur.nonzeros <- which(abs(influence.vec) > cutoff)
 
 #### Run a simple second-order polynomial model for occurrences ####
-occur.data <- data.frame(Influence = occur.influence.vec[occur.nonzeros],
+occur.data <- data.frame(Influence = influence.vec[occur.nonzeros],
                          Phy.dist = phy.dist.vec[occur.nonzeros],
                          Ecol.dist = ecol.dist.vec[occur.nonzeros])
 
@@ -65,7 +73,7 @@ mod.predict <- cbind(occur.data,
 ## Set y limits for plotting
 ceiling_dec <- function(x, level = 1) round(x + 5*10 ^ (-level - 1), level)
 y.upper <- ceiling_dec(max(mod.predict$upr), 1)
-y.lower <- -1 * ceiling_dec(min(abs(mod.predict$lwr)), 1)
+y.lower <- -1 * ceiling_dec(max(abs(mod.predict$lwr)), 1)
 
 #### Plotting prediction lines ####
 ## Set the default text sizes
@@ -77,13 +85,13 @@ theme.size <- (14/5) * geom.text.size
 g1 <- ggplot2::ggplot(mod.predict,
                       ggplot2::aes(Ecol.dist)) +
   ggplot2::stat_smooth(ggplot2::aes(y = lwr), size = 0.1,
-                       colour = "black",
+                       colour = "black", n = 200, span = 1,
                        method = "loess", se = FALSE) +
   ggplot2::stat_smooth(ggplot2::aes(y = upr), size = 0.1,
-                       colour = "black",
+                       colour = "black", n = 200, span = 1,
                        method = "loess", se = FALSE) +
   ggplot2::stat_smooth(ggplot2::aes(y = fit), size = 0.6,
-                       colour = "black",
+                       colour = "black", n = 200, span = 1,
                        method = "loess", se = FALSE)
 gg1 <- ggplot2::ggplot_build(g1)
 df2 <- data.frame(x = gg1$data[[1]]$x,
@@ -124,13 +132,13 @@ hab.plot <- g1 +
 ## Repeat using the phylogenetic distance predictor
 g1 <- ggplot2::ggplot(mod.predict, ggplot2::aes(Phy.dist)) +
   ggplot2::stat_smooth(ggplot2::aes(y = lwr), size = 0.1,
-                       colour = "black",
+                       colour = "black", n = 200, span = 1,
                        method = "loess", se = FALSE) +
   ggplot2::stat_smooth(ggplot2::aes(y = upr), size = 0.1,
-                       colour = "black",
+                       colour = "black", n = 200, span = 1,
                        method = "loess", se = FALSE) +
   ggplot2::stat_smooth(ggplot2::aes(y = fit), size = 0.6,
-                       colour = "black",
+                       colour = "black", n = 200, span = 1,
                        method = "loess", se = FALSE)
 gg1 <- ggplot2::ggplot_build(g1)
 df2 <- data.frame(x = gg1$data[[1]]$x,
