@@ -11,11 +11,13 @@
 #'for species (each column representing a different species)
 #'@param covariates A \code{matrix} of covariates, with \code{nrow(covariates) == nrow(response)}
 #'@param lassoBinomial A fitted \code{\link{lassoBinomial_comm}} model object
+#'@param n_cores Positive integer stating the number of processing cores to split the job across.
+#'Default is \code{parallel::detect_cores() - 1}
 #'@return A \code{matrix} containing predictions for each observation in \code{outcome_data}.
 #'
 #'@export
 predictlassoBinomial = function(outcome_data, lassoBinomial, count_data,
-                                covariates){
+                                covariates, n_cores){
 
   n_nodes <- nrow(lassoBinomial$coefficients)
 
@@ -35,13 +37,78 @@ predictlassoBinomial = function(outcome_data, lassoBinomial, count_data,
       count_data[, i] <- count_data[, i] / lassoBinomial$poiss_sc_factors[[i]]
     }
 
+  #### If n_cores > 1, check parallel library loading ####
+  if(n_cores > 1){
+    #Initiate the n_cores parallel clusters
+    cl <- makePSOCKcluster(n_cores)
+    setDefaultCluster(cl)
+
+    #### Check for errors when directly loading a library on each cluster ####
+    test_load1 <- try(clusterEvalQ(cl, library(glmnet)), silent = TRUE)
+
+    #If errors produced, iterate through other options for library loading
+    if(class(test_load1) == "try-error") {
+
+      #Try finding unique library paths using system.file()
+      pkgLibs <- unique(c(sub("/glmnet$", "", system.file(package = "glmnet"))))
+      clusterExport(NULL, c('pkgLibs'), envir = environment())
+      clusterEvalQ(cl, .libPaths(pkgLibs))
+
+      #Check again for errors loading libraries
+      test_load2 <- try(clusterEvalQ(cl, library(glmnet)), silent = TRUE)
+
+      if(class(test_load2) == "try-error"){
+
+        #Try loading the user's .libPath() directly
+        clusterEvalQ(cl,.libPaths(as.character(.libPaths())))
+        test_load3 <- try(clusterEvalQ(cl, library(glmnet)), silent = TRUE)
+
+        if(class(test_load3) == "try-error"){
+
+          #Give up and use lapply instead!
+          parallel_compliant <- FALSE
+          stopCluster(cl)
+
+        } else {
+          parallel_compliant <- TRUE
+        }
+
+      } else {
+        parallel_compliant <- TRUE
+      }
+
+    } else {
+      parallel_compliant <- TRUE
+    }
+  } else {
+    #If n_cores = 1, set parallel_compliant to FALSE
+    parallel_compliant <- FALSE
+    warning('Parallel loading failed, calculations may crash!')
+  }
+
   # Calculate linear predictions using the `coefficients element from the model
   covariates <- cbind(count_data, covariates)
-    predictions <- do.call(cbind, lapply(seq_len(n_nodes), function(i){
-      apply(covariates, 1, function(j) sum(j * lassoBinomial$coefficients[i, -1]) +
+
+  if(parallel_compliant){
+
+    #Export necessary data and variables to each cluster
+    clusterExport(NULL, c('covariates', 'n_nodes', 'lassoBinomial'),
+                  envir = environment())
+
+    predictions <- do.call(cbind, pbapply::pblapply(seq_len(n_nodes), function(i){
+      apply(covariates, 1, function(j) sum(j %*% t(lassoBinomial$coefficients[i, -1])) +
               lassoBinomial$intercepts[i])
-    }
-    ))
+    }, cl = cl))
+    stopCluster(cl)
+
+    } else {
+
+    predictions <- do.call(cbind, lapply(seq_len(n_nodes), function(i){
+      apply(covariates, 1, function(j) sum(j %*% t(lassoBinomial$coefficients[i, -1])) +
+              lassoBinomial$intercepts[i])
+    }))
+
+  }
     colnames(predictions) <- node_names
 
     # Convert linear predictions to probability scale
@@ -66,13 +133,17 @@ predictlassoBinomial = function(outcome_data, lassoBinomial, count_data,
 #'
 #' @export
 lassoBinomial_metrics = function(outcome_data, lassoBinomial, count_data,
-                                 covariates){
+                                 covariates, n_cores){
+
+  if(missing(n_cores)){
+    n_cores <- parallel::detectCores() - 1
+  }
 
   folds <- caret::createFolds(rownames(outcome_data), 10)
   n_folds <- 10
 
    all_predictions <- predictlassoBinomial(outcome_data, lassoBinomial, count_data,
-                                           covariates)
+                                           covariates, n_cores = n_cores)
 
    n_nodes <- nrow(lassoBinomial$coefficients)
 

@@ -5,9 +5,11 @@
 \alias{lassoBinomial_metrics}
 \title{Predict binomial outcomes from a fitted lassoBinomial_comm model}
 \usage{
-predictlassoBinomial(outcome_data, lassoBinomial, count_data, covariates)
+predictlassoBinomial(outcome_data, lassoBinomial, count_data, covariates,
+  n_cores)
 
-lassoBinomial_metrics(outcome_data, lassoBinomial, count_data, covariates)
+lassoBinomial_metrics(outcome_data, lassoBinomial, count_data, covariates,
+  n_cores)
 }
 \arguments{
 \item{outcome_data}{\code{dataframe}. The input data to be predicted, where the
@@ -21,6 +23,9 @@ was used to fit the \code{lassoBinomial_comm}}
 for species (each column representing a different species)}
 
 \item{covariates}{A \code{matrix} of covariates, with \code{nrow(covariates) == nrow(response)}}
+
+\item{n_cores}{Positive integer stating the number of processing cores to split the job across.
+Default is \code{parallel::detect_cores() - 1}}
 }
 \value{
 A \code{matrix} containing predictions for each observation in \code{outcome_data}.
