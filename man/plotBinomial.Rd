@@ -26,7 +26,7 @@ using model output from \code{lassoBinomial}
 }
 \details{
 Species' pairwise influences on occurrence probabilities are extracted from
-\code{lassoBinomial$Coefficients} and predicted
+\code{lassoBinomial$coefficients} and predicted
 by their respective habitat niche and phylogenetic distances (extracted from
 \code{data("Bird.ecol.distances")} and \code{data("Bird.phy.distances")}) using
 a second-order polynomial regression of the form

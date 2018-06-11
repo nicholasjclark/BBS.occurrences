@@ -2,7 +2,7 @@
 % Please edit documentation in R/prepDendrograms.R
 \name{prepDendrograms}
 \alias{prepDendrograms}
-\title{Create Gower’s a distance functional similarity dendrogram for species
+\title{Create a multivariate functional similarity dendrogram for species
 using lists of trait datasets}
 \usage{
 prepDendrograms(func.datasets, prep.types)
@@ -18,7 +18,7 @@ or \code{'Q'} (for continuous variables). For more information about prep method
 \code{\link[ade4]{dist.ktab}}}
 }
 \description{
-Create Gower’s a distance functional similarity dendrogram for species
+Create a multivariate functional similarity dendrogram for species
 using lists of trait datasets
 }
 \details{

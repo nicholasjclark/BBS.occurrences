@@ -68,31 +68,34 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
                             dplyr::mutate_if(is.numeric, funs(as.vector(scale(.)))))
 
   #### Run LASSO occurrence and abundance models ####
-  occurrence_mod <- lassoBinomial_comm(outcome_data = region_bin_outcome[, 1:10],
-                                     count_data = region_abund_predict[, 1:10],
+  occurrence_mod <- lassoBinomial_comm(outcome_data = region_bin_outcome,
+                                     count_data = region_abund_predict,
                                      covariates = covariates,
-                                     n_reps = 5, n_cores = 4)
+                                     n_reps = 25, n_cores = 24)
 
-  abundance_mod <- lassoAbund_comm(outcome_data = region_abund[, 1:10],
-                                   binary_data = region_bin[, 1:10],
+  abundance_mod <- lassoAbund_comm(outcome_data = region_abund,
+                                   binary_data = region_bin,
                                    covariates = covariates,
-                                   n_reps = 5, n_cores = 4)
+                                   n_reps = 25, n_cores = 24)
 
   #### Calculate predictive metrics for the binomial model ####
-  occurrence_mets <- lassoBinomial_metrics(outcome_data = region_bin_outcome[, 1:10],
-                                           count_data = region_abund_predict[, 1:10],
+  occurrence_mets <- lassoBinomial_metrics(outcome_data = region_bin_outcome,
+                                           count_data = region_abund_predict,
                                            covariates = covariates,
                                            lassoBinomial = occurrence_mod,
-                                           n_cores = 4)
+                                           n_cores = 24)
 
   #### Predict network centrality and assess model fit from abundance model ####
-  abundance_cent <- MRFcov::predict_MRFnetworks(data = cbind(region_abund[, 1:10], covariates),
-                                        MRF_mod = abundance_mod, metric = "degree", n_cores = 3)
+  abundance_cent <- MRFcov::predict_MRFnetworks(data = cbind(region_abund, covariates),
+                                        MRF_mod = abundance_mod, metric = "eigencentrality",
+                                        n_cores = 24)
 
-  abund_predictions <- MRFcov::predict_MRF(data = cbind(region_abund[, 1:10], covariates),
-                                           MRF_mod = abundance_mod, n_cores = 4)
+  abundance_cent <- cbind(abundance_cent, covariates)
 
-  abund_metrics <- MRFcov::cv_MRF_diag(data = cbind(region_abund[, 1:10], covariates),
+  abund_predictions <- MRFcov::predict_MRF(data = cbind(region_abund, covariates),
+                                           MRF_mod = abundance_mod, n_cores = 24)
+
+  abund_metrics <- MRFcov::cv_MRF_diag(data = cbind(region_abund, covariates),
                                        n_nodes = nrow(abundance_mod$direct_coefs),
                                        n_folds = 10, n_cores = 1, family = 'poisson',
                                        compare_null = FALSE, plot = FALSE,
@@ -102,13 +105,13 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
 
   list(occurrence_mod = occurrence_mod,
        occurrence_spec = quantile(occurrence_mets$mean_specificity,
-                                  probs = c(0.25, 0.5, 0.75)),
+                                  probs = c(0.025, 0.5, 0.975)),
        occurrence_sens = quantile(occurrence_mets$mean_sensitivity,
-                                  probs = c(0.25, 0.5, 0.75)),
+                                  probs = c(0.025, 0.5, 0.975)),
        abundance_mod = abundance_mod,
        abundance_cent = abundance_cent,
        abund_Rsquared = quantile(abund_metrics$Rsquared,
-                                 probs = c(0.25, 0.5, 0.75)),
+                                 probs = c(0.025, 0.5, 0.975)),
        removed_covs = removed_covs)
 })
 

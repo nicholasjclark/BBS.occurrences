@@ -1,4 +1,4 @@
-#'Create Gower’s a distance functional similarity dendrogram for species
+#'Create a multivariate functional similarity dendrogram for species
 #'using lists of trait datasets
 #'
 #'

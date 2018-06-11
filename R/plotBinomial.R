@@ -9,7 +9,7 @@
 #'important influence on occurrence probability. Default is \code{0.05}, meaning that the top 95
 #'percent of biotic coefficients are retained when performing the polynomial regression
 #'@details Species' pairwise influences on occurrence probabilities are extracted from
-#'\code{lassoBinomial$Coefficients} and predicted
+#'\code{lassoBinomial$coefficients} and predicted
 #'by their respective habitat niche and phylogenetic distances (extracted from
 #'\code{data("Bird.ecol.distances")} and \code{data("Bird.phy.distances")}) using
 #'a second-order polynomial regression of the form
@@ -28,7 +28,7 @@ data("Bird.ecol.distances")
 data("Bird.phy.distances")
 
 #### Extract ecological and phylogenetic pairwise distances for the assessed species ####
-sp.names <- rownames(lassoBinomial$Coefficients)
+sp.names <- rownames(lassoBinomial$coefficients)
 Bird.ecol.distances <- Bird.ecol.distances[sp.names, sp.names]
 ecol.dist.vec <- Bird.ecol.distances[upper.tri(Bird.ecol.distances)]
 
@@ -36,7 +36,7 @@ Bird.phy.distances <- Bird.phy.distances[sp.names, sp.names]
 phy.dist.vec <- Bird.phy.distances[upper.tri(Bird.phy.distances)]
 
 ## Extract vector of occurrence influence coefficients
-occur.coefs <- lassoBinomial$Coefficients[, sp.names]
+occur.coefs <- lassoBinomial$coefficients[, sp.names]
 influence.vec <- occur.coefs[upper.tri(occur.coefs)]
 
 ## Calculate quantiles of non-zero influence coefficients

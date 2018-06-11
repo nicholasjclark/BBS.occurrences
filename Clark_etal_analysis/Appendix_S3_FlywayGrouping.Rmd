@@ -99,8 +99,8 @@ Now that all of our site-level covariates are stored together, we can intersect 
 point_counties = Site.descriptors %>%
   dplyr::select(Latitude, Longitude) %>%
   dplyr::distinct() %>%
-  dplyr::mutate(County = geo_inside(lon = lon, 
-                                         lat = lat,
+  dplyr::mutate(County = geo_inside(lon = Longitude, 
+                                         lat = Latitude,
                                   map = county.shp,
                                   variable = NAME))
 
