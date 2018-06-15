@@ -7,7 +7,7 @@
 networkBetaOS(adjacency_list, n_cores)
 }
 \arguments{
-\item{adjacency_list}{\code{list}. The input data should be a list of
+\item{adjacency_list}{The input data should be a \code{list} of
 \code{\link[igraph]{graph.adjacency}} matrices, ideally as returned by
 \code{\link[MRFcov]{predict_MRFnetworks}} using \code{metric == 'adjacency'}}
 
@@ -16,6 +16,13 @@ Default is \code{parallel::detect_cores() - 1}}
 }
 \value{
 A \code{vector} containing predicted \emph{B}'os values for each network in \code{adjacency_list}
+}
+\description{
+This function takes a network based on predicted species' interactions and
+returns the beta diversity metric \emph{B}'os,
+defined by Poisot et al. 2012. Please note, this function was adapted from code
+provided by Timothee Poisot in the \code{\link[betalink]{betalink}} package. For details,
+see \code{\link[betalink]{beta_os_prime}}
 }
 \details{
 This function calculates \emph{B}'os,

@@ -22,7 +22,8 @@ Imports: stringr,
     gridExtra,
     grid,
     caret,
-    purrr
+    purrr,
+    lmerTest
 Suggests: testthat,
     knitr, 
     rmarkdown,
@@ -30,8 +31,7 @@ Suggests: testthat,
     sf,
     tidyverse,
     rvest,
-    httr,
-    purrr
+    httr
 Remotes: nicholasjclark/MRFcov,
     ropensci/prism,
     PoisotLab/betalink

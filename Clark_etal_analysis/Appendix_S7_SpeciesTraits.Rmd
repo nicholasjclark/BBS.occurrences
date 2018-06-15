@@ -1,5 +1,5 @@
 ---
-title: "Appendix S7 - Extracting Migration Status Information"
+title: "Appendix S7 - Extracting Migration Status, Diet Diversity and Habitat Diversity"
 author: "Nicholas J Clark, David J Harris, Ceridwen Fraser"
 output:
   pdf_document:
@@ -12,7 +12,7 @@ library(knitr)
 opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
 ```
 
-This appendix describes how to extract information on species' migratory status from BirdLife International. This data can be accessed in the `BBS.occurrences` library using `data('Bird.mig.status')`. Note, the primary functions in this appendix were adapted from code that was generously provided by [Tad Dallas](https://taddallas.github.io/).  
+This appendix describes how to extract information on species' migratory status from BirdLife International as well as calculate indices of habitat diversity, diet diversity and rarity. This data can be accessed in the `BBS.occurrences` library using `data('Bird.traits')`. Note, the primary functions for extracting migratory status were adapted from code that was generously provided by [Tad Dallas](https://taddallas.github.io/).  
   
 Some libraries that are not automatically included in the package will be needed for web-scraping. Check that they are installed and up-to-date
 ```{r eval = FALSE}
@@ -36,7 +36,7 @@ Load the binary species occurrence data that is included in the `BBS.occurrences
 ```{r eval = FALSE}
 library(BBS.occurrences)
 data("BBS.occurrences")
-sp.names <- colnames(BBS.occurrences)
+sp_names <- colnames(BBS.occurrences)
 ```
 
 \pagebreak
@@ -96,7 +96,7 @@ parallel_compliant
 After confirming parallel capabilities, start the parallel clusters and run the function. Note, this step requires an internet connection and will take some time to process the 303 avian species in the dataset
 ```{r eval = FALSE}
   #Export necessary data and variables to each cluster
-  clusterExport(NULL, c('BT.tax', 'sp.names'), envir = environment())
+  clusterExport(NULL, c('BT.tax', 'sp_names'), envir = environment())
   
   #Export necessary libraries
   clusterEvalQ(cl, library(rvest))
@@ -104,14 +104,14 @@ After confirming parallel capabilities, start the parallel clusters and run the 
   clusterEvalQ(cl, library(purrr))
   clusterEvalQ(cl, library(xml2))
 
-search_migstatus <- pbapply::pblapply(seq_along(sp.names), function(x){
+search_migstatus <- pbapply::pblapply(seq_along(sp_names), function(x){
 
 session <- rvest::html_session("http://datazone.birdlife.org/species/search")
 Sys.sleep(4)
 
 form <- html_form(session)[[3]]
 
-filledform <- set_values(form, kw = sp.names[x])
+filledform <- set_values(form, kw = sp_names[x])
 session <- submit_form(session, filledform)$url
 
 landing_pg <- xml2::read_html(session)
@@ -129,7 +129,7 @@ if(identical(sp_link, character(0))){
   session <- rvest::html_session("http://datazone.birdlife.org/species/search")
   Sys.sleep(4)
   
-  comm_name <- as.character(BT.tax$English[which(BT.tax$TipLabel == paste(sp.names[x]))])
+  comm_name <- as.character(BT.tax$English[which(BT.tax$TipLabel == paste(sp_names[x]))])
   form <- rvest::html_form(session)[[3]]
   
   filledform <- rvest::set_values(form, 
@@ -146,7 +146,7 @@ if(identical(sp_link, character(0))){
   
   # If still not found, return NA
   if(identical(sp_link, character(0))){
-  output <- data.frame(Species = sp.names[x],
+  output <- data.frame(species = sp_names[x],
              Migrate.status = 'NA')
   } else{
     details_link <- paste0("http://datazone.birdlife.org/species/factsheet/",
@@ -155,7 +155,7 @@ if(identical(sp_link, character(0))){
     migrate_status <- xml2::read_html(details_link) %>%
       rvest::html_nodes(css="tr:nth-child(1) td:nth-child(2)") %>% 
       rvest::html_text()
-    output <- data.frame(Species = sp.names[x],
+    output <- data.frame(species = sp_names[x],
                          Migrate.status = migrate_status)
   }
 } else{
@@ -165,7 +165,7 @@ details_link <- paste0("http://datazone.birdlife.org/species/factsheet/",
 migrate_status <- xml2::read_html(details_link) %>%
   rvest::html_nodes(css="tr:nth-child(1) td:nth-child(2)") %>% 
   rvest::html_text()
-output <- data.frame(Species = sp.names[x],
+output <- data.frame(species = sp_names[x],
            Migrate.status = migrate_status)
 }
 output
@@ -174,10 +174,57 @@ Bird.mig.status <- do.call(rbind, search_migstatus)
 Bird.mig.status$Migrate.status <- as.character(Bird.mig.status$Migrate.status)
 ```
 
-Save the migration information in the analysis folder. This dataframe can be accessed in the `BBS.occurrences` library using `data('Bird.mig.status')`.
+Next, we calculate Shannon Diversity indices to represent species' diet and habitat breadths. This function makes use of the data available in the [EltonTraits database](https://figshare.com/articles/Data_Paper_Data_Paper/3559887), which is the same that we used in `Appendix_S4`
 ```{r eval = FALSE}
-save(Bird.mig.status, 
+temp <- tempfile()
+download.file('https://ndownloader.figshare.com/files/5631081',
+              temp)
+Sp_traits <- read.table(temp, header = TRUE,
+                        fill = TRUE,
+                        quote = '"',
+                        stringsAsFactors = FALSE,
+                        sep = "\t")
+unlink(temp)
+```
+
+\pagebreak
+
+Calculate Shannon indices of diet and habitat diversity for each species
+```{r eval = FALSE}
+Sp_traits <- Sp_traits[which(Sp_traits$Scientific %in% sub('_', ' ', sp_names)),] %>%
+  dplyr::right_join(data.frame(Scientific = sub('_', ' ', sp_names))) %>%
+  dplyr::select(Scientific:ForStrat.aerial) %>%
+  dplyr::mutate(species = sub(' ', '_', Scientific)) %>%
+  dplyr::select(-Scientific, -English, -Diet.5Cat, -Diet.Source,
+                -Diet.Certainty, -Diet.EnteredBy) %>%
+  dplyr::mutate_if(stringr::str_detect(colnames(.), "Diet"),
+                   funs((. / 100) * log(. / 100) * -1)) %>%
+  dplyr::mutate_if(stringr::str_detect(colnames(.), "ForStrat"),
+                   funs((. / 100) * log(. / 100) * -1)) %>%
+  dplyr::mutate(Diet.diversity = rowSums(.[1:10], na.rm = T),
+                Hab.diversity = rowSums(.[11:17], na.rm = T)) %>%
+  dplyr::select(species, Diet.diversity, Hab.diversity)
+```
+
+Calculate an index of rarity for each species, defined by it's scaled occurrence total across all observations, where larger values indicate a species is more rare
+```{r eval = FALSE}
+Rarity <- data.frame(species = sp_names,
+                     
+                     Rarity = as.vector(scale(colSums(BBS.occurrences) / 
+                                                   nrow(BBS.occurrences))))
+Rarity$Rarity <- -1 * Rarity
+```
+
+
+Add the rarity and diveristy metrics to the migration dataset and save in the analysis folder. This dataframe can be accessed in the `BBS.occurrences` library using `data('Bird.traits')`.
+```{r eval = FALSE}
+Bird.traits = Bird.mig.status %>%
+  dplyr::left_join(Rarity) %>%
+  dplyr::left_join(Sp_traits) %>%
+  dplyr::select(species, dplyr::everything())
+
+save(Bird.traits, 
      file = './Analysis_data/
-     Bird.mig.status.Rdata')
+     Bird.traits.Rdata')
 ```
 

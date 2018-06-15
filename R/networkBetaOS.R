@@ -3,12 +3,12 @@
 #'This function takes a network based on predicted species' interactions and
 #'returns the beta diversity metric \emph{B}'os,
 #'defined by Poisot et al. 2012. Please note, this function was adapted from code
-#'provided by Timothee Poisot in the \link[betalink]{betalink}} package. For details,
+#'provided by Timothee Poisot in the \code{\link[betalink]{betalink}} package. For details,
 #'see \code{\link[betalink]{beta_os_prime}}
 #'
 #'@importFrom parallel makePSOCKcluster setDefaultCluster clusterExport stopCluster clusterEvalQ detectCores parLapply
 #'
-#'@param adjacency_list \code{list}. The input data should be a list of
+#'@param adjacency_list The input data should be a \code{list} of
 #'\code{\link[igraph]{graph.adjacency}} matrices, ideally as returned by
 #'\code{\link[MRFcov]{predict_MRFnetworks}} using \code{metric == 'adjacency'}
 #'
@@ -34,17 +34,18 @@
 #'
 networkBetaOS <- function(adjacency_list, n_cores){
 
-  # Make sure that betalink is installed
+#Make sure that betalink is installed
   if(!require(betalink)){
     devtools::install_github('PoisotLab/betalink')
   }
 
-## Convert the list of adjacency matrices to a metaweb
+#Convert the list of adjacency matrices to a metaweb
 metaweb <- betalink::metaweb(adjacency_list)
 
 if(missing(n_cores)){
   n_cores <- parallel::detectCores() - 1
 }
+
 #### If n_cores > 1, check parallel library loading ####
 if(n_cores > 1){
   #Initiate the n_cores parallel clusters
