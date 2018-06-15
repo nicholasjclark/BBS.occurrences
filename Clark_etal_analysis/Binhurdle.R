@@ -4,6 +4,11 @@ data("BBS.occurrences")
 data("BBS.abundances")
 data("Site.descriptors")
 
+# Make sure that MRFcov development version is installed
+if(!require(MRFcov)){
+  devtools::install_github('nicholasjclark/MRFcov@development')
+}
+
 # Convert sites within flyways into biogeographical regions
 all_regions <- createRegions(n_cores = 4)
 

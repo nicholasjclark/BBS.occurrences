@@ -12,7 +12,7 @@ library(knitr)
 opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
 ```
 
-This appendix describes how to extract information on species' migratory status from BirdLife International. This data can be accessed in the `BBS.occurrences` library using `data('Bird.mig.status')`.  
+This appendix describes how to extract information on species' migratory status from BirdLife International. This data can be accessed in the `BBS.occurrences` library using `data('Bird.mig.status')`. Note, the primary functions in this appendix were adapted from code that was generously provided by [Tad Dallas](https://taddallas.github.io/).  
   
 Some libraries that are not automatically included in the package will be needed for web-scraping. Check that they are installed and up-to-date
 ```{r eval = FALSE}

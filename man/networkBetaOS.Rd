@@ -15,21 +15,21 @@ networkBetaOS(adjacency_list, n_cores)
 Default is \code{parallel::detect_cores() - 1}}
 }
 \value{
-A \code{vector} containing predicted \emph{B'os} values for each network.
-}
-\description{
-This function takes a network based on predicted species' interactions and
-returns the beta diversity metric defined by Poisot et al. 2012 see(\code{\link[betalink]{beta_os_prime}})
+A \code{vector} containing predicted \emph{B}'os values for each network in \code{adjacency_list}
 }
 \details{
-This function calculates \emph{B'os},
+This function calculates \emph{B}'os,
 i.e. the distance between a local network's realized interactions and the
-expected interactions based on the regional metaweb
+potential interactions (calculated by integrating interactions from all local
+networks into a regional \emph{metaweb}). Values close to \code{0} suggest there is a low local
+selection of interactions (nearly all regional interactions are found in the local
+network), whereas values closer to \code{1} reflect local selection of species' interactions
 }
 \references{
-Timothée, P., Elsa, C., David, M., Nicolas, M. & Dominique, G. (2012)
+Poisot, T., Canard, E., Mouillot, D., Mouquet, N. & Gravel, D. (2012)
 The dissimilarity of species interaction networks. Ecology Letters, 15, 1353-1361.
 }
 \seealso{
-\code{\link[betalink]{beta_os_prime}}
+\code{\link[betalink]{beta_os_prime}}\cr
+\code{\link[betalink]{metaweb}}
 }
