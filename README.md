@@ -1,6 +1,6 @@
 ## Effects of landcover on avian community composition and co-abundance variation
 
-This `BBS.occurrences` repository stores functions and datasets for a collaborative project aiming to analyse variation in avian community composition and interspecific 'interactions' by applying Conditional Random Fields (Clark et al. 2018) to count data using North American Breeding Bird Survey data.   
+This `BBS.occurrences` repository stores functions and datasets for a collaborative project aiming to analyse variation in avian community composition and interspecific 'interactions' by applying Conditional Random Fields (Clark et al. 2018) to count data using [North American Breeding Bird Survey](https://www2.usgs.gov/science/cite-view.php?cite=17) data.   
   
 Code in the `Appendix_S1_CompileBBS` script (within the `Clark_etal_analysis` folder) was used for compiling BBS observations from years 2003 - 2009.   
   
@@ -11,9 +11,9 @@ Code in the `Appendix_S1_CompileBBS` script (within the `Clark_etal_analysis` fo
 `Appendix_S4_PhyloTraitData` describes how avian species' phylogenetic and functional
 trait datasets were accessed to create pairwise distance matrices.  
   
-`Appendix_S5_PRISMData` describes how to download climate data from the PRISM dataset for each sample observation.  
+`Appendix_S5_PRISMData` describes how to download climate data from the [PRISM dataset](https://climatedataguide.ucar.edu/climate-data/prism-high-resolution-spatial-climate-data-united-states-maxmin-temp-dewpoint) for each sample observation.  
   
-`Appendix_S6_StormData` demonstrates how to download storm data from the NOAA storm events database.  
+`Appendix_S6_StormData` demonstrates how to download storm data from the [NOAA storm events database](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2).  
   
 `Appendix_S7_SpeciesTraits` shows functions used to scrape BirdLife International for information on species' migratory status and to calculate Shannon Diversity indices of habitat and diet diversity for each species using data in the [EltonTraits database](https://figshare.com/articles/Data_Paper_Data_Paper/3559887).
   
