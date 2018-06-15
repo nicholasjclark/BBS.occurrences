@@ -1,32 +1,32 @@
 Miss.bin.mod1 <- region_mods$`Mississippi Flyway1`$occurrence_mod
-binplot1 <- plotBinomial(lassoBinomial = Miss.bin.mod1, cutoff = 0.25)
+binplot1 <- plotBinomial(lassoBinomial = Miss.bin.mod1, cutoff = 0.1)
 
 Miss.abund.mod1 <- region_mods$`Mississippi Flyway1`$abundance_mod
-abundplot1 <- plotGaussian(lassoAbund = Miss.abund.mod1, cutoff = 0.25)
+abundplot1 <- plotGaussian(lassoAbund = Miss.abund.mod1, cutoff = 0.1)
 gridExtra::grid.arrange(binplot1, abundplot1, ncol = 2)
 
 ###2
 Miss.bin.mod2 <- region_mods$`Mississippi Flyway2`$occurrence_mod
-binplot2 <- plotBinomial(lassoBinomial = Miss.bin.mod2, cutoff = 0.25)
+binplot2 <- plotBinomial(lassoBinomial = Miss.bin.mod2, cutoff = 0.1)
 
 Miss.abund.mod2 <- region_mods$`Mississippi Flyway2`$abundance_mod
-abundplot2 <- plotGaussian(lassoAbund = Miss.abund.mod2, cutoff = 0.25)
+abundplot2 <- plotGaussian(lassoAbund = Miss.abund.mod2, cutoff = 0.1)
 gridExtra::grid.arrange(binplot2, abundplot2, ncol = 2)
 
 ###3
 Miss.bin.mod3 <- region_mods$`Mississippi Flyway3`$occurrence_mod
-binplot3 <- plotBinomial(lassoBinomial = Miss.bin.mod3, cutoff = 0.25)
+binplot3 <- plotBinomial(lassoBinomial = Miss.bin.mod3, cutoff = 0.1)
 
 Miss.abund.mod3 <- region_mods$`Mississippi Flyway3`$abundance_mod
-abundplot3 <- plotGaussian(lassoAbund = Miss.abund.mod3, cutoff = 0.25)
+abundplot3 <- plotGaussian(lassoAbund = Miss.abund.mod3, cutoff = 0.1)
 gridExtra::grid.arrange(binplot3, abundplot3, ncol = 2)
 
 ###4
 Miss.bin.mod4 <- region_mods$`Mississippi Flyway4`$occurrence_mod
-binplot4 <- plotBinomial(lassoBinomial = Miss.bin.mod4, cutoff = 0.25)
+binplot4 <- plotBinomial(lassoBinomial = Miss.bin.mod4, cutoff = 0.1)
 
 Miss.abund.mod4 <- region_mods$`Mississippi Flyway4`$abundance_mod
-abundplot4 <- plotGaussian(lassoAbund = Miss.abund.mod4, cutoff = 0.25)
+abundplot4 <- plotGaussian(lassoAbund = Miss.abund.mod4, cutoff = 0.1)
 gridExtra::grid.arrange(binplot4, abundplot4, ncol = 2)
 
 # Find covariates that were removed
@@ -57,18 +57,14 @@ summariseAbund_res(Miss.abund.mod2)
 summariseAbund_res(Miss.abund.mod3)
 summariseAbund_res(Miss.abund.mod4)
 
-# View species with highest overall centralities
-#run phylo and functional glmms to find predictors of centrality
-abundance_cent <- region_mods$`Mississippi Flyway1`$abundance_cent
-
-names(which.max(colMeans(region_mods$`Mississippi Flyway2`$abundance_cent)))
-names(which.max(colMeans(region_mods$`Mississippi Flyway3`$abundance_cent)))
-names(which.max(colMeans(region_mods$`Mississippi Flyway4`$abundance_cent)))
-
 #### Predict centrality function ####
 #function(lassoAbund, abundance_cent){
+#run phylo and functional glmms to find predictors of centrality
+abundance_cent <- region_mods$`Mississippi Flyway1`$abundance_cent
 #abundance_cent <- lassAbund$abundance_cent
+
 lassoAbund <- region_mods$`Mississippi Flyway1`$abundance_mod
+
 sp_names <- rownames(lassoAbund$graph)
 
 ## Find species with high overall centrality
@@ -78,10 +74,13 @@ keystone_sp <- names(abundance_cent[, sp_names][which(colMeans(abundance_cent[ ,
                                                       >= high_cent)])
 
 ## Gather centrality observations into tidy long format
+library(dplyr)
 cent_mod_data = abundance_cent %>%
   tidyr::gather('species' = sp_names, species, centrality) %>%
   dplyr::filter(centrality > 0) %>%
-  dplyr::mutate(centrality = log(centrality))
+  dplyr::filter(species %in% keystone_sp) %>%
+  #logit transform for skewed proportional data
+  dplyr::mutate(centrality = log(centrality / (1 - centrality)))
 
 hist(cent_mod_data$centrality)
 
@@ -90,15 +89,52 @@ fixed_effects <- paste(colnames(cent_mod_data[, !names(cent_mod_data) %in% c('sp
 
 full_formula <- paste(paste('centrality','~', fixed_effects), '(1 | species)', sep = " + ")
 
-test <- lme4::lmer(as.formula(full_formula), data = cent_mod_data, REML = FALSE)
-summary(test)
-qqnorm(resid(test))
+all_cvs <- parallel::mclapply(seq_len(10), function(j){
+cat('Processing fold', j, 'of', 10, '...\n')
+n_folds <- 5
+folds <- caret::createFolds(rownames(cent_mod_data), n_folds)
+
+fit_cvs <- lapply(seq_len(n_folds), function(k){
+cat('Processing training validation', k, 'of', n_folds, '...\n')
+train.mod <- lme4::lmer(as.formula(full_formula),
+                        data = cent_mod_data[-folds[[k]], ], REML = FALSE)
+test.data <- cent_mod_data[folds[[k]], ]
+
+## calculate rsquared
+test.data$predict = predict(train.mod, newdata = test.data)
+rsquared <- cor.test(test.data$centrality, test.data$predict)[[4]]
+
+## calculate rsquared
+test.data$predict = predict(train.mod, newdata = test.data)
+rsquared <- cor.test(test.data$centrality, test.data$predict)[[4]]
+
+## extract coefficients
+mod.results <- data.frame(coef(train.mod)$species)
+intercepts <- data.frame(Species = rownames(mod.results),
+                         Intercept = mod.results[,1])
+
+mod.coefs <- data.frame(Parameter = rownames(data.frame(summary(train.mod)$coefficients[-1,])),
+                        Coefficient = summary(train.mod)$coefficients[-1,1])
+
+list(coefficients = mod.coefs,
+     intercepts = intercepts,
+     rsquared = rsquared)
+})
+
+list(coef.fold.summary = do.call(rbind, purrr::map(fit_cvs, 'coefficients')))
+}, mc.cores = 3)
+
+coef.summary <- do.call(rbind, purrr::map(all_cvs, 'coef.fold.summary')) %>%
+  dplyr::group_by(Parameter) %>%
+  dplyr::summarise(Lower.95 = quantile(Coefficient, probs = 0.01),
+                   Median = quantile(Coefficient, probs = 0.5),
+                   Upper.95 = quantile(Coefficient, probs = 0.99)) %>%
+  dplyr::arrange(-abs(Median))
 
 #### Summarise covariates function ####
 summariseAbund_res = function(lassoAbund){
 
 ## Summarise interaction coefficients
-library(dplyr)
   graph <- lassoAbund$graph
   coefs <- graph[upper.tri(graph)]
   coefs.nonzero <- coefs[which(coefs != 0 )]
@@ -168,7 +204,7 @@ cov.indirect.overview$Number.neg.coefs <- cov.indirect.overview$Number.nonzero.c
 
 cov.indirect.overview$Number.interactions <- length(coefs.nonzero)
 
-cov.indirect.overview <- cov.indirect.overview[order(-cov.indirect.overview$Number.nonzero.coefs),]
+cov.indirect.overview <- cov.indirect.overview[order(-cov.indirect.overview$Mean.abs.magnitude),]
 return(list(tot_pos_interactions = coefs.pos,
             tot_neg_interactions = coefs.neg,
             direct_effects = cov.overview,

@@ -33,7 +33,8 @@ Suggests: testthat,
     httr,
     purrr
 Remotes: nicholasjclark/MRFcov,
-    ropensci/prism
+    ropensci/prism,
+    PoisotLab/betalink
 VignetteBuilder: knitr
 URL: https://github.com/nicholasjclark/BBS.occurrences
 BugReports: https://github.com/nicholasjclark/BBS.occurrences/issues

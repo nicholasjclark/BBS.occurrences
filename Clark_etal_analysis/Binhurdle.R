@@ -71,12 +71,12 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
   occurrence_mod <- lassoBinomial_comm(outcome_data = region_bin_outcome,
                                      count_data = region_abund_predict,
                                      covariates = covariates,
-                                     n_reps = 25, n_cores = 24)
+                                     n_reps = 50, n_cores = 24)
 
   abundance_mod <- lassoAbund_comm(outcome_data = region_abund,
                                    binary_data = region_bin,
                                    covariates = covariates,
-                                   n_reps = 25, n_cores = 24)
+                                   n_reps = 50, n_cores = 24)
 
   #### Calculate predictive metrics for the binomial model ####
   occurrence_mets <- lassoBinomial_metrics(outcome_data = region_bin_outcome,
@@ -85,13 +85,28 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
                                            lassoBinomial = occurrence_mod,
                                            n_cores = 24)
 
-  #### Predict network centrality and assess model fit from abundance model ####
+  #### Predict network centrality and local network beta diversity (B'os) ####
   abundance_cent <- MRFcov::predict_MRFnetworks(data = cbind(region_abund, covariates),
                                         MRF_mod = abundance_mod, metric = "eigencentrality",
+                                        cutoff = 2,
+                                        omit_zeros = TRUE,
                                         n_cores = 24)
 
-  abundance_cent <- cbind(abundance_cent, covariates)
+  network_metrics <- cbind(abundance_cent, covariates)
 
+  abundance_adj <- MRFcov::predict_MRFnetworks(data = cbind(region_abund, covariates),
+                                                MRF_mod = abundance_mod, metric = 'adjacency',
+                                                cutoff = 2,
+                                                omit_zeros = TRUE,
+                                                n_cores = 24)
+
+  beta_os_primes <- networkBetaOS(abundance_adj, n_cores = 24)
+
+  network_metrics$beta_os <- beta_os_primes
+
+  rm(abundance_cent,abundance_adj)
+
+  #### Assess model fit from abundance model ####
   abund_predictions <- MRFcov::predict_MRF(data = cbind(region_abund, covariates),
                                            MRF_mod = abundance_mod, n_cores = 24)
 
@@ -109,7 +124,7 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
        occurrence_sens = quantile(occurrence_mets$mean_sensitivity,
                                   probs = c(0.025, 0.5, 0.975)),
        abundance_mod = abundance_mod,
-       abundance_cent = abundance_cent,
+       network_metrics = network_metrics,
        abund_Rsquared = quantile(abund_metrics$Rsquared,
                                  probs = c(0.025, 0.5, 0.975)),
        removed_covs = removed_covs)

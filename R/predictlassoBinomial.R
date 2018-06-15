@@ -3,6 +3,8 @@
 #'This function calculates linear predictors for species' binary observations
 #'using equations from a \code{\link{lassoBinomial_comm}} model.
 #'
+#'@importFrom parallel makePSOCKcluster setDefaultCluster clusterExport stopCluster clusterEvalQ detectCores parLapply
+#'
 #'@param outcome_data \code{dataframe}. The input data to be predicted, where the
 #'columns represent binary occurrences of the species.
 #'Colnames from this sample dataset must exactly match the colnames in the dataset that
