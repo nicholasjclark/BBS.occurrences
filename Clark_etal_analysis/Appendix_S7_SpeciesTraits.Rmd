@@ -216,12 +216,39 @@ Rarity$Rarity <- -1 * Rarity
 ```
 
 
-Add the rarity and diveristy metrics to the migration dataset and save in the analysis folder. This dataframe can be accessed in the `BBS.occurrences` library using `data('Bird.traits')`.
+Add the rarity and diveristy metrics to the migration dataset
 ```{r eval = FALSE}
 Bird.traits = Bird.mig.status %>%
   dplyr::left_join(Rarity) %>%
   dplyr::left_join(Sp_traits) %>%
   dplyr::select(species, dplyr::everything())
+```
+
+
+Finally, we extract information on species' average clutch size from the [Avian Life History Traits Dataset](http://www.esapubs.org/archive/ecol/E088/096/default.htm). We then join this variable to our remaining trait variables and save in the analysis folder. This dataframe can be accessed in the `BBS.occurrences` library using `data('Bird.traits')`.
+```{r eval = FALSE}
+temp <- tempfile()
+download.file("http://www.esapubs.org/archive/ecol/E088/096/avian_ssd_jan07.txt",
+              temp)
+life_hist <- read.table(temp, header = TRUE,
+                        fill = TRUE,
+                        quote = '"',
+                        stringsAsFactors = FALSE,
+                        sep = "\t")
+unlink(temp)
+
+life_hist <- life_hist[ , 3:37]
+
+life_hist %>%
+  dplyr::mutate_if(is.integer, as.numeric) %>%
+  dplyr::select(Species_name, Clutch_size) %>%
+  purrr::set_names(c('species','Clutch_size')) %>%
+  dplyr::mutate(Clutch_size = ifelse(Clutch_size == -999, 
+                                     NA, Clutch_size),
+                species = sub(' ', '_', species)) %>%
+  dplyr::right_join(Bird.traits) -> Bird.traits
+
+Bird.traits$Clutch_size <- as.vector(scale(Bird.traits$Clutch_size))
 
 save(Bird.traits, 
      file = './Analysis_data/

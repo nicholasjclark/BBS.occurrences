@@ -1,13 +1,13 @@
 Miss.bin.mod1 <- region_mods$`Mississippi Flyway1`$occurrence_mod
-binplot1 <- plotBinomial(lassoBinomial = Miss.bin.mod1, cutoff = 0.1)
+binplot1 <- plotBinomial(lassoBinomial = Miss.bin.mod1, cutoff = 0.2)
 
 Miss.abund.mod1 <- region_mods$`Mississippi Flyway1`$abundance_mod
-abundplot1 <- plotGaussian(lassoAbund = Miss.abund.mod1, cutoff = 0.1)
+abundplot1 <- plotGaussian(lassoAbund = Miss.abund.mod1, cutoff = 0.2)
 gridExtra::grid.arrange(binplot1, abundplot1, ncol = 2)
 
 ###2
 Miss.bin.mod2 <- region_mods$`Mississippi Flyway2`$occurrence_mod
-binplot2 <- plotBinomial(lassoBinomial = Miss.bin.mod2, cutoff = 0.1)
+binplot2 <- plotBinomial(lassoBinomial = Miss.bin.mod2, cutoff = 0.2)
 
 Miss.abund.mod2 <- region_mods$`Mississippi Flyway2`$abundance_mod
 abundplot2 <- plotGaussian(lassoAbund = Miss.abund.mod2, cutoff = 0.1)
@@ -52,6 +52,7 @@ region_mods$`Mississippi Flyway3`$abund_Rsquared
 region_mods$`Mississippi Flyway4`$abund_Rsquared
 
 # Summarise covariate influences on abundances
+library(dplyr)
 summariseAbund_res(Miss.abund.mod1)
 summariseAbund_res(Miss.abund.mod2)
 summariseAbund_res(Miss.abund.mod3)
@@ -60,7 +61,7 @@ summariseAbund_res(Miss.abund.mod4)
 #### Predict centrality function ####
 #function(lassoAbund, abundance_cent){
 #run phylo and functional glmms to find predictors of centrality
-abundance_cent <- region_mods$`Mississippi Flyway1`$abundance_cent
+abundance_cent <- region_mods$`Mississippi Flyway1`$network_metrics
 #abundance_cent <- lassAbund$abundance_cent
 
 lassoAbund <- region_mods$`Mississippi Flyway1`$abundance_mod
@@ -74,14 +75,15 @@ keystone_sp <- names(abundance_cent[, sp_names][which(colMeans(abundance_cent[ ,
                                                       >= high_cent)])
 
 ## Gather centrality observations into tidy long format
-library(dplyr)
 cent_mod_data = abundance_cent %>%
   tidyr::gather('species' = sp_names, species, centrality) %>%
   dplyr::filter(centrality > 0) %>%
   dplyr::filter(species %in% keystone_sp) %>%
 
   #logit transform for skewed proportional data
-  dplyr::mutate(centrality = log(centrality / (1 - centrality)))
+  dplyr::mutate(centrality = log(centrality / (1 - centrality))) %>%
+  dplyr::select(-beta_os) %>%
+  dplyr::filter(is.finite(centrality))
 
 ## Load species' traits informationn to be used as predictors of centrality
 data("Bird.traits")
@@ -97,14 +99,13 @@ full_formula <- paste(paste('centrality', '~', fixed_effects),
                       '(1 | species)', sep = " + ")
 
 #### Perform 100 rounds of 4-fold cv to estimate coefficient quantiles and rsquared ####
-all_cvs <- parallel::mclapply(seq_len(10), function(j){
+all_cvs <- parallel::mclapply(seq_len(5), function(j){
 
 fit_cvs <- lapply(seq_len(4), function(k){
 
 ## extract 75% of observations as training data
 row_indices <- seq_len(nrow(cent_mod_data))
 in_train <- sample(row_indices, floor(nrow(cent_mod_data) * .75), F)
-
 
 ## run the model on training data
 train_mod <- lmerTest::lmer(as.formula(full_formula),
@@ -163,6 +164,34 @@ intercept.summary <- do.call(rbind, purrr::map(all_cvs, 'intercept.summary')) %>
                    Median = round(quantile(Intercept, probs = 0.5), 4),
                    Upper = round(max(Intercept), 4)) %>%
   dplyr::arrange(-abs(Median))
+
+
+#### Estimate predictors of interaction beta diversity ####
+beta_mod_data <- abundance_cent[,!(names(abundance_cent) %in% sp_names)] %>%
+  dplyr::mutate(beta_os = as.vector(scale(beta_os)))
+
+## Build a linear model formula
+fixed_effects <- paste(colnames(beta_mod_data[, !names(beta_mod_data) %in% c('beta_os')]),
+                       collapse = '+')
+
+full_formula <- paste('beta_os', '~', fixed_effects)
+
+## extract 75% of observations as training data
+row_indices <- seq_len(nrow(beta_mod_data))
+in_train <- sample(row_indices, floor(nrow(beta_mod_data) * .75), F)
+
+train_mod <- lm(as.formula(full_formula),
+                            data = beta_mod_data[in_train, ])
+
+## use backward step-wise selection to choose best predictors
+step_test <- step(train_mod, trace = 0)
+
+## calculate rsquared by predicting with-held (test) data
+test_data <- beta_mod_data[-in_train, ]
+test_data$predict = predict(step_test, newdata = test_data)
+rsquared <- cor.test(test_data$beta_os, test_data$predict)[[4]]
+
+summary(step_test)
 
 #### Summarise covariates function ####
 summariseAbund_res = function(lassoAbund){

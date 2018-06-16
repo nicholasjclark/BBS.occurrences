@@ -68,6 +68,12 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
   region_abund <- as.data.frame(region_abund[!row_has_na, ])
   region_abund_predict <- as.data.frame(region_abund_predict[!row_has_na, ])
 
+  # Bin very large counts at the 99th percentile (these likely add no extra insight, only noise)
+  top_count <- ceiling(quantile(as.vector(as.matrix(region_abund)), probs = 0.99))
+
+  region_abund[region_abund > top_count] <- top_count
+  region_abund_predict[region_abund_predict > top_count] <- top_count
+
   # Scale all continuous covariates so magnitudes of effects can be compared
   covariates = data.frame(covariates %>%
                             dplyr::mutate_if(is.numeric, funs(as.vector(scale(.)))))
@@ -132,7 +138,8 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
        network_metrics = network_metrics,
        abund_Rsquared = quantile(abund_metrics$Rsquared,
                                  probs = c(0.025, 0.5, 0.975)),
-       removed_covs = removed_covs)
+       removed_covs = removed_covs,
+       top_count = top_count)
 })
 
 names(region_mods) <- unique_regions
