@@ -39,6 +39,11 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
   region_abund <- BBS.abundances[region_rows, ]
   region_bin <- BBS.occurrences[region_rows, ]
 
+  # Extract coordinates for inclusion as a spatial effect
+  coords <- all_regions %>%
+    dplyr::select(Latitude, Longitude)
+  coords <- coords[region_rows, ]
+
   # Remove species occurring in fewer than 15% of observations
   low_occur_cols <- which((colSums(region_bin) / nrow(region_bin)) < 0.15)
   region_bin <- region_bin[, -low_occur_cols]
@@ -71,6 +76,7 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
   region_bin_outcome <- as.data.frame(region_bin_outcome[!row_has_na, ])
   region_abund <- as.data.frame(region_abund[!row_has_na, ])
   region_abund_predict <- as.data.frame(region_abund_predict[!row_has_na, ])
+  coords <- coords[!row_has_na, ]
 
   # Bin very large counts at the 99th percentile (these likely add no extra insight, only noise)
   top_count <- ceiling(quantile(as.vector(as.matrix(region_abund)), probs = 0.99))
@@ -142,6 +148,7 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
        network_metrics = network_metrics,
        abund_Rsquared = quantile(abund_metrics$Rsquared,
                                  probs = c(0.025, 0.5, 0.975)),
+       coordinates = coords,
        removed_covs = removed_covs,
        top_count = top_count)
 })

@@ -361,7 +361,6 @@ networkModel = function(mods_list, n_bootstraps, n_cores){
 
   beta.reg.intercept.summary = do.call(rbind, purrr::map(all_cvs, 'beta_reg_intercepts')) %>%
     dplyr::group_by(Region) %>%
-    dplyr::mutate(Intercept = boot::inv.logit(Intercept)) %>%
     dplyr::summarise(Lower.intercept = round(quantile(Intercept, probs = 0.025), 4),
                      Median.intercept = round(quantile(Intercept, probs = 0.5), 4),
                      Upper.intercept = round(quantile(Intercept, probs = 0.975), 4)) %>%

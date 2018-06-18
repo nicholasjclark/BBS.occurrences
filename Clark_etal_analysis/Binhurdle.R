@@ -17,7 +17,9 @@ all_regions <- createRegions(n_cores = 4)
 flyways <- as.character(unique(all_regions$Site.group))
 
 # Fit the hurdle model for the first flyway
-region_mods <- hurdleModel(flyway = flyway[1], n_cores = 24)
+#region_mods <- hurdleModel(flyway = flyways[1], n_cores = 24)
+
+load('./BBS_results/Binhurdle.rda')
 
 # Estimate predictors of network metrics
 network_mods <- networkModel(mods_list = region_mods,

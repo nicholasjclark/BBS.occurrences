@@ -1,14 +1,85 @@
-test <- networkModel(mods_list = region_mods,
-                     n_bootstraps = 2,
-                     n_cores = 2)
+network_mods$sp_cent_coefs
+network_mods$betadiv_coefs
+network_mods$betadiv_intercepts
+network_mods$sp_cent_rsquared
+network_mods$betadiv_rsquared
+network_mods$sp_cent_intercepts
 
-test$betadiv_coefs
 
-testFunc(mods_list = region_mods,
-         n_bootstraps = 2,
-         n_cores = 1)
+beta_fixed_effects <- paste(network_mods$betadiv_coefs$Parameter,
+                            collapse = '+')
+
+beta_full_formula <- paste('beta_os', '~', beta_fixed_effects)
+
+mod <- lm(as.formula(beta_full_formula),
+          data = network_mods$betadiv_mod_data)
+
+## Predict outcomes using 99% confidence and 68% prediction intervals
+mod.predict <- cbind(network_mods$betadiv_mod_data,
+                     predict(mod, interval = 'confidence',
+                             level = 0.9999999999))
+predictions <- predict(mod, interval = 'prediction',
+                       level = 0.68)
+
+colnames(predictions) <- c('pred.fit','pred.lwr','pred.upr')
+mod.predict <- cbind(mod.predict,predictions)
+
+geom.text.size <- 4
+theme.size <- (14/5) * geom.text.size
+
+## Plot the predicted regression line and confidence interval for
+# habitat niche distance, smooth prediction intervals using loess
+g1 <- ggplot2::ggplot(mod.predict,
+                      ggplot2::aes(Prop.forest)) +
+  ggplot2::stat_smooth(ggplot2::aes(y = lwr), size = 0.1,
+                       colour = "white", n = 500, span = 1, se = FALSE) +
+  ggplot2::stat_smooth(ggplot2::aes(y = upr), size = 0.1,
+                       colour = "white", n = 500, span = 1, se = FALSE)
+gg1 <- ggplot2::ggplot_build(g1)
+df2 <- data.frame(x = gg1$data[[1]]$x,
+                  ymin = gg1$data[[1]]$y,
+                  ymax = gg1$data[[2]]$y)
+
+g2 <- ggplot2::ggplot(mod.predict,
+                     ggplot2::aes(Prop.forest)) +
+  ggplot2::stat_smooth(ggplot2::aes(y = pred.lwr), size = 0.1,
+                       colour = "white", n = 500, span = 1, se = FALSE) +
+  ggplot2::stat_smooth(ggplot2::aes(y = pred.upr), size = 0.1,
+                       colour = "white", n = 500, span = 1, se = FALSE)
+gg2 <- ggplot2::ggplot_build(g2)
+df3 <- data.frame(x = gg2$data[[1]]$x,
+                  ymin = gg2$data[[1]]$y,
+                  ymax = gg2$data[[2]]$y)
+
+ forest.plot <- g1 +
+   geom_point(data = mod.predict, aes(x = Prop.forest, y = beta_os),
+              alpha = 0.1, size = 0.15, colour = 'grey60') +
+  ggplot2::geom_ribbon(data = df3,
+                        ggplot2::aes(x = x, ymin = ymin, ymax = ymax),
+                        fill = "red", alpha = 0.3) +
+  ggplot2::geom_ribbon(data = df2,
+                       ggplot2::aes(x = x, ymin = ymin, ymax = ymax),
+                       fill = "red", alpha = 0.85) +
+  ggplot2::theme_bw() +
+  ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
+                 panel.grid.minor = ggplot2::element_blank()) +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(hjust = 1),
+                 axis.text = ggplot2::element_text(size = 9),
+                 legend.title = ggplot2::element_blank())+
+  ggplot2::ylab(expression(paste("Interaction dissimilarity (", beta["os"],")"))) +
+  ggplot2::xlab('Percent forest cover') +
+  ggplot2::theme(axis.text = ggplot2::element_text(size = theme.size - 1, colour = "black"),
+                 strip.text.x = ggplot2::element_text(size = theme.size, colour = "black"),
+                 axis.title = ggplot2::element_text(size = theme.size, colour = 'black')) +
+  ggplot2::theme(plot.title = ggplot2::element_text(color="black", face="bold", hjust = 0.5,
+                                                    size = theme.size))
+
+pdf('forest.plot.pdf',width = 3.1,height = 2.8)
+forest.plot
+dev.off()
 
 Miss.bin.mod1 <- region_mods$`Mississippi Flyway1`$occurrence_mod
+View(Miss.bin.mod1$coefficients)
 binplot1 <- plotBinomial(lassoBinomial = Miss.bin.mod1, cutoff = 0.2)
 
 Miss.abund.mod1 <- region_mods$`Mississippi Flyway1`$abundance_mod
@@ -67,47 +138,6 @@ summariseAbund_res(Miss.abund.mod1)
 summariseAbund_res(Miss.abund.mod2)
 summariseAbund_res(Miss.abund.mod3)
 summariseAbund_res(Miss.abund.mod4)
-
-#### Predict centrality function ####
-#function(lassoAbund, abundance_cent){
-#run phylo and functional glmms to find predictors of centrality
-abundance_cent <- region_mods$`Mississippi Flyway1`$network_metrics
-
-
-
-
-
-
-#### Estimate predictors of interaction beta diversity ####
-beta_mod_data <- abundance_cent[,!(names(abundance_cent) %in% sp_names)] %>%
-  dplyr::mutate(beta_os = as.vector(scale(beta_os)))
-
-## Build a linear model formula
-fixed_effects <- paste(colnames(beta_mod_data[, !names(beta_mod_data) %in% c('beta_os')]),
-                       collapse = '+')
-
-full_formula <- paste('beta_os', '~', fixed_effects)
-
-## extract 75% of observations as training data
-row_indices <- seq_len(nrow(beta_mod_data))
-in_train <- sample(row_indices, floor(nrow(beta_mod_data) * .75), F)
-
-train_mod <- lm(as.formula(full_formula),
-                            data = beta_mod_data[in_train, ])
-
-## use backward step-wise selection to choose best predictors
-step_test <- step(train_mod, trace = 0)
-
-## calculate rsquared by predicting with-held (test) data
-test_data <- beta_mod_data[-in_train, ]
-test_data$predict = predict(step_test, newdata = test_data)
-rsquared <- cor.test(test_data$beta_os, test_data$predict)[[4]]
-
-summary(step_test)
-
-
-
-
 
 
 #### Summarise covariates function ####
