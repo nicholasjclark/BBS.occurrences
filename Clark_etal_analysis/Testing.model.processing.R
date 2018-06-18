@@ -1,3 +1,13 @@
+test <- networkModel(mods_list = region_mods,
+                     n_bootstraps = 2,
+                     n_cores = 2)
+
+test$betadiv_coefs
+
+testFunc(mods_list = region_mods,
+         n_bootstraps = 2,
+         n_cores = 1)
+
 Miss.bin.mod1 <- region_mods$`Mississippi Flyway1`$occurrence_mod
 binplot1 <- plotBinomial(lassoBinomial = Miss.bin.mod1, cutoff = 0.2)
 
@@ -62,108 +72,10 @@ summariseAbund_res(Miss.abund.mod4)
 #function(lassoAbund, abundance_cent){
 #run phylo and functional glmms to find predictors of centrality
 abundance_cent <- region_mods$`Mississippi Flyway1`$network_metrics
-#abundance_cent <- lassAbund$abundance_cent
 
-lassoAbund <- region_mods$`Mississippi Flyway1`$abundance_mod
 
-sp_names <- rownames(lassoAbund$graph)
 
-## Find species with high overall centrality
-high_cent <- as.numeric(quantile(colMeans(abundance_cent[ , sp_names]),
-                                    probs = 0.75))
-keystone_sp <- names(abundance_cent[, sp_names][which(colMeans(abundance_cent[ , sp_names])
-                                                      >= high_cent)])
 
-## Gather centrality observations into tidy long format
-cent_mod_data = abundance_cent %>%
-  tidyr::gather('species' = sp_names, species, centrality) %>%
-  dplyr::filter(centrality > 0) %>%
-  dplyr::filter(species %in% keystone_sp) %>%
-
-  #logit transform for skewed proportional data
-  dplyr::mutate(centrality = log(centrality / (1 - centrality))) %>%
-  dplyr::select(-beta_os) %>%
-  dplyr::filter(is.finite(centrality))
-
-## Load species' traits informationn to be used as predictors of centrality
-data("Bird.traits")
-
-cent_mod_data = cent_mod_data %>%
-  dplyr::left_join(Bird.traits)
-
-## Use the covariate names to build a linear mixed model formula
-fixed_effects <- paste(colnames(cent_mod_data[, !names(cent_mod_data) %in% c('species','centrality')]),
-                       collapse = '+')
-
-full_formula <- paste(paste('centrality', '~', fixed_effects),
-                      '(1 | species)', sep = " + ")
-
-#### Perform 100 rounds of 4-fold cv to estimate coefficient quantiles and rsquared ####
-all_cvs <- parallel::mclapply(seq_len(5), function(j){
-
-fit_cvs <- lapply(seq_len(4), function(k){
-
-## extract 75% of observations as training data
-row_indices <- seq_len(nrow(cent_mod_data))
-in_train <- sample(row_indices, floor(nrow(cent_mod_data) * .75), F)
-
-## run the model on training data
-train_mod <- lmerTest::lmer(as.formula(full_formula),
-                        data = cent_mod_data[in_train, ], REML = FALSE)
-
-## use backward step-wise selection to choose best predictors
-step_test <- lmerTest::step(train_mod)
-
-best_mod <- lmerTest::get_model(step_test)
-
-## calculate rsquared by predicting with-held (test) data
-test_data <- cent_mod_data[-in_train, ]
-test_data$predict = predict(best_mod, newdata = test_data)
-rsquared <- cor.test(test_data$centrality, test_data$predict)[[4]]
-
-## extract coefficients
-mod_results <- data.frame(coef(best_mod)$species)
-intercepts <- data.frame(Species = rownames(mod_results),
-                         Intercept = mod_results[,1])
-
-mod_coefs <- data.frame(Parameter = rownames(data.frame(summary(best_mod)$coefficients[-1, ])),
-                        Coefficient = summary(best_mod)$coefficients[-1, 1])
-
-list(coefficients = mod_coefs,
-     intercepts = intercepts,
-     rsquared = rsquared)
-})
-
-list(coef.fold.summary = do.call(rbind, purrr::map(fit_cvs, 'coefficients')),
-     intercept.summary = do.call(rbind, purrr::map(fit_cvs, 'intercepts')),
-     rsquared.summary = do.call(rbind, purrr::map(fit_cvs, 'rsquared')))
-
-}, mc.cores = 3)
-
-#### Extract summary statistics of model coefficients ####
-coef.summary <- do.call(rbind, purrr::map(all_cvs, 'coef.fold.summary')) %>%
-  dplyr::group_by(Parameter) %>%
-  dplyr::summarise(Lower = round(min(Coefficient), 4),
-                   Median = round(quantile(Coefficient, probs = 0.5), 4),
-                   Upper = round(max(Coefficient), 4)) %>%
-  dplyr::arrange(-abs(Median))
-
-rsquared.summary <- data.frame(cor = do.call(rbind, purrr::map(all_cvs, 'rsquared.summary'))) %>%
-  dplyr::mutate(Group = 1) %>%
-  dplyr::group_by(Group) %>%
-  dplyr::summarise(Lower = round(min(cor), 4),
-                   Median = round(quantile(cor, probs = 0.5), 4),
-                   Upper = round(max(cor), 4)) %>%
-  dplyr::ungroup() %>%
-  dplyr::select(-Group)
-
-intercept.summary <- do.call(rbind, purrr::map(all_cvs, 'intercept.summary')) %>%
-  dplyr::group_by(Species) %>%
-  dplyr::mutate(Intercept = boot::inv.logit(Intercept)) %>%
-  dplyr::summarise(Lower = round(min(Intercept), 4),
-                   Median = round(quantile(Intercept, probs = 0.5), 4),
-                   Upper = round(max(Intercept), 4)) %>%
-  dplyr::arrange(-abs(Median))
 
 
 #### Estimate predictors of interaction beta diversity ####
@@ -192,6 +104,11 @@ test_data$predict = predict(step_test, newdata = test_data)
 rsquared <- cor.test(test_data$beta_os, test_data$predict)[[4]]
 
 summary(step_test)
+
+
+
+
+
 
 #### Summarise covariates function ####
 summariseAbund_res = function(lassoAbund){

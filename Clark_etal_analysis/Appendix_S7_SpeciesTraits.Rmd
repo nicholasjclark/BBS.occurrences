@@ -12,7 +12,7 @@ library(knitr)
 opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
 ```
 
-This appendix describes how to extract information on species' migratory status from BirdLife International as well as calculate indices of habitat diversity, diet diversity and rarity. This data can be accessed in the `BBS.occurrences` library using `data('Bird.traits')`. Note, the primary functions for extracting migratory status were adapted from code that was generously provided by [Tad Dallas](https://taddallas.github.io/).  
+This appendix describes how to extract information on species' migratory status from BirdLife International as well as calculate indices of habitat use, habitat diversity, diet diversity and rarity. This data can be accessed in the `BBS.occurrences` library using `data('Bird.traits')`. Note, the primary functions for extracting migratory status were adapted from code that was generously provided by [Tad Dallas](https://taddallas.github.io/).  
   
 Some libraries that are not automatically included in the package will be needed for web-scraping. Check that they are installed and up-to-date
 ```{r eval = FALSE}
@@ -225,7 +225,7 @@ Bird.traits = Bird.mig.status %>%
 ```
 
 
-Finally, we extract information on species' average clutch size from the [Avian Life History Traits Dataset](http://www.esapubs.org/archive/ecol/E088/096/default.htm). We then join this variable to our remaining trait variables and save in the analysis folder. This dataframe can be accessed in the `BBS.occurrences` library using `data('Bird.traits')`.
+Next, we extract information on species' average clutch size from the [Avian Life History Traits Dataset](http://www.esapubs.org/archive/ecol/E088/096/default.htm).
 ```{r eval = FALSE}
 temp <- tempfile()
 download.file("http://www.esapubs.org/archive/ecol/E088/096/avian_ssd_jan07.txt",
@@ -243,12 +243,47 @@ life_hist %>%
   dplyr::mutate_if(is.integer, as.numeric) %>%
   dplyr::select(Species_name, Clutch_size) %>%
   purrr::set_names(c('species','Clutch_size')) %>%
-  dplyr::mutate(Clutch_size = ifelse(Clutch_size == -999, 
+  dplyr::mutate(Clutch.size = ifelse(Clutch_size == -999, 
                                      NA, Clutch_size),
                 species = sub(' ', '_', species)) %>%
   dplyr::right_join(Bird.traits) -> Bird.traits
 
-Bird.traits$Clutch_size <- as.vector(scale(Bird.traits$Clutch_size))
+Bird.traits$Clutch.size <- as.vector(scale(Bird.traits$Clutch.size))
+```
+
+\pagebreak
+
+Finally, we extract additional information on species' nesting behaviour and broad habitat use by creating binary indicators using data available in [Land Condition Trend Analysis Avian Database](https://ecologicaldata.org/wiki/land-condition-trend-analysis-avian-database-ecological-guild-based-summaries). We then join these variables into a single trait dataset and save in the `Analysis` folder. Note, this data can be accessed in the `BBS.occurrences` library using `data('Bird.traits')`.
+```{r eval = FALSE}
+temp <- tempfile()
+download.file('https://ecologicaldata.org/sites/default/files/lcta.txt',
+              temp)
+nest_traits <- read.table(temp, header = TRUE,
+                        fill = TRUE,
+                        quote = '"',
+                        stringsAsFactors = FALSE,
+                        sep = "\t")
+unlink(temp)
+
+nest_traits %>%
+  dplyr::mutate(species = sub(' ', '_', SCIENTIFIC_NAME)) %>%
+  dplyr::mutate(Ground.nest = ifelse(grepl('Ground', 
+                                           NEST_LOC) == T, 1, 0),
+                Lower.canopy.nest = ifelse(grepl('Lower Canopy', 
+                                                 NEST_LOC) == T, 1, 0),
+                Upper.canopy.nest = ifelse(grepl('Upper Canopy', 
+                                                 NEST_LOC) == T, 1, 0),
+                Floating.nest = ifelse(grepl('Floating', 
+                                                 NEST_LOC) == T, 1, 0),
+                Forest.hab = ifelse(grepl('Shrubland|Riparian|Forest',
+                                             HABITAT) == T, 1, 0),
+                Disturbed.hab = ifelse(grepl('Cropland|Urban|Forest Edge',
+                                             HABITAT) == T, 1, 0),
+                Grassland.hab = ifelse(grepl('Grassland|Tundra',
+                                             HABITAT) == T, 1, 0)) %>%
+  dplyr::select(species,Ground.nest,Lower.canopy.nest,Upper.canopy.nest,
+                Floating.nest,Forest.hab,Grassland.hab,Disturbed.hab) %>%
+  dplyr::right_join(Bird.traits) -> Bird.traits
 
 save(Bird.traits, 
      file = './Analysis_data/
