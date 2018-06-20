@@ -41,7 +41,7 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
 
   # Extract coordinates for inclusion as a spatial effect
   coords <- all_regions %>%
-    dplyr::select(Latitude, Longitude)
+    dplyr::select(ID, Latitude, Longitude, Year)
   coords <- coords[region_rows, ]
 
   # Remove species occurring in fewer than 15% of observations

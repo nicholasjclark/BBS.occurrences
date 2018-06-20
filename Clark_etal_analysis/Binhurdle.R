@@ -12,21 +12,24 @@ if(!require(MRFcov)){
 # Convert sites within flyways into biogeographical regions
 all_regions <- createRegions(n_cores = 4)
 
+# Create unique site IDs for spatio-temporal modelling
+all_regions %>%
+  dplyr::select(Latitude, Longitude) %>%
+  dplyr::distinct() %>%
+  dplyr::mutate(ID = as.character(dplyr::id(.))) %>% #ID must be a character
+  dplyr::ungroup() %>%
+  dplyr::left_join(all_regions) -> all_regions
+
 # Test models on a single flyway (Mississippi)
 # Gather names of flyways
 flyways <- as.character(unique(all_regions$Site.group))
 
-# Fit the hurdle model for the first flyway
-#region_mods <- hurdleModel(flyway = flyways[1], n_cores = 24)
-
-load('./BBS_results/Binhurdle.rda')
-
-# Estimate predictors of network metrics
-network_mods <- networkModel(mods_list = region_mods,
-                             n_bootstraps = 100,
-                             n_cores = 24)
+# Fit the hurdle model (10 reps) for each flyway
+region_mods <- lapply(seq_len(flyways), function(x){
+  hurdleModel(flyway = flyways[x], n_cores = 24)
+})
+names(region_mods) <- flyways
 
 save(region_mods,
      all_regions,
-     network_mods,
      file = './BBS_results/Binhurdle.rda')

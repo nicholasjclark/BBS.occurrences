@@ -75,6 +75,8 @@ networkModel = function(mods_list, n_bootstraps, n_cores){
                        'species', 'centrality$'),
                         collapse = "$|^")
   covs_keep <- paste('^' , covs_keep, sep = '')
+  beta_covs_keep <- paste(all_covs[!unlist(to_keep)],collapse = "$|^")
+  beta_covs_keep <- paste('^', beta_covs_keep, '$', sep = '')
 
   #### Convert eigencentrality scores to long format, keeping only scores for
   # species with above-average centrality (top 25th percentile) ####
@@ -115,14 +117,132 @@ networkModel = function(mods_list, n_bootstraps, n_cores){
   ## Bind the regional centrality datasets together to create the species-level datast
   cent_mod_data = dplyr::bind_rows(cents) %>%
     dplyr::select(-beta_os)
+   rm(cents)
 
   ## Now create the community-level beta diversity dataset
-  betadiv_mod_data = dplyr::bind_rows(cents) %>%
-    dplyr::select(-species,-centrality,-Clutch.size,-Ground.nest,-Disturbed.hab,
-                  -Migrate.status,-Rarity,-Diet.diversity,-Hab.diversity) %>%
-    dplyr::mutate(beta_os = as.vector(scale(beta_os)))
+   betadiv_mod_data <- lapply(seq_along(mods_list), function(x){
 
-  #### Use the covariate names to build a linear mixed model formula for the species data ####
+    beta_data <- mods_list[[x]]$network_metrics %>%
+      dplyr::select(matches(beta_covs_keep)) %>%
+      #dplyr::bind_cols(mods_list[[x]]$coordinates
+      dplyr::bind_cols(coords[[x]])
+
+    lassoAbund <- mods_list[[x]]$abundance_mod
+    sp_names <- paste(rownames(lassoAbund$graph), collapse = '|')
+    #vars_keep <- paste0(sp_names,'|','Latitude','|','Longitude')
+
+    diversities <- mods_list[[x]]$network_metrics %>%
+      dplyr::select(matches(sp_names)) %>%
+      dplyr::bind_cols(coords[[x]]) %>%
+      dplyr::group_by(Latitude, Longitude) %>%
+      dplyr::summarise_all(funs(sum(. > 0, na.rm = TRUE))) %>%
+      dplyr::group_by(Latitude, Longitude) %>%
+      dplyr::mutate_all(funs(ifelse(. > 0,1,0))) %>%
+      dplyr::group_by(Latitude, Longitude) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(Diversity = rowSums(.[3:ncol(.)])) %>%
+      dplyr::select(Latitude,Longitude,Diversity) %>%
+      dplyr::left_join(beta_data) %>%
+      dplyr::mutate(Diversity.sc = as.vector(scale(Diversity)),
+                    beta_os.sc = as.vector(scale(beta_os)))
+})
+   betadiv_mod_data <- do.call(rbind, betadiv_mod_data)
+
+   ###### Do this for each dataset and calculate host diversity and mean
+   # climate variables to include as
+   ## Create unique site ids
+   betadiv_mod_data %>%
+     dplyr::select(Latitude, Longitude) %>%
+     dplyr::distinct() %>%
+     dplyr::mutate(ID = as.character(dplyr::id(.))) %>% #ID must be a character
+     dplyr::ungroup() %>%
+     left_join(betadiv_mod_data) -> betadiv_mod_data
+
+   # observations should be year * site
+   obs_data <- betadiv_mod_data %>%
+     dplyr::select(ID, beta_os, Year) %>%
+     tidyr::spread(ID, beta_os)
+   rownames(obs_data) <- obs_data$Year
+   obs_data$Year <- NULL
+
+   # spatial (site-level) covariates should contain ID column
+   # create coordinates (in km) for distance computations
+   spat_covs <- betadiv_mod_data %>%
+     dplyr::select(ID, Latitude, Longitude) %>%
+     dplyr::distinct() %>%
+     dplyr::mutate(x = (111.13 * Longitude * cos(34.021 * 3.14/180)),
+                   y = 111.13 * Latitude)
+
+   # each spatiotemporal covariate must follow the structure of obs_data
+   prop_forest_st <- betadiv_mod_data %>%
+     dplyr::select(ID, Prop.forest, Year) %>%
+     tidyr::spread(ID, Prop.forest)
+   rownames(prop_forest_st) <- prop_forest_st$Year
+   prop_forest_st$Year <- NULL
+
+   # observations and spatio-temporal variables must be matrices
+   obs_matrix <- as.matrix(obs_data)
+   prop_forest_matrix <- as.matrix(prop_forest_st)
+
+   library(SpatioTemporal)
+   mesa.data <- createSTdata(obs = obs_matrix,
+                             covars = spat_covs,
+                             SpatioTemporal = list(prop.forest = prop_forest_matrix))
+
+   # Determine temporal functions
+   D <- createDataMatrix(mesa.data)
+   SVD.cv <- SVDsmoothCV(D, 0:4)
+   plot(SVD.cv) #elbow at 3 for BIC and AIC
+
+   mesa.data <- updateTrend(mesa.data, n.basis = 1)
+
+   # Check a site to ensure the smoother captures trends
+   plot(mesa.data, "obs", ID=6,
+        xlab = "", ylab = "B'",
+        main = "Temporal trend 60370113")
+
+   # Estimate regression coefficients
+   beta.lm <- estimateBetaFields(mesa.data)
+   View(beta.lm$beta)
+
+   locations <- list(coords=c("x","y"), long.lat=c("Longitude","Latitude"))
+
+   mesa.model <- createSTmodel(mesa.data, ST = "prop.forest",
+                                locations = locations)
+   print(mesa.model)
+
+   dim <- loglikeSTdim(mesa.model)
+
+   x.init <- rep(2, dim$nparam.cov)
+
+   names(x.init) <- loglikeSTnames(mesa.model, all=FALSE)
+
+   est.mesa.model <- estimate(mesa.model, x.init, type = "r", hessian.all = TRUE,
+                              control = list(trace = 3, maxit = 100))
+
+   #visualise parameter estimates
+   print(est.mesa.model)
+
+   #check for convergence
+   est.mesa.model$res.best$conv
+
+   #visualise parameter estimates
+   pars <- est.mesa.model$res.best$par.all
+   par(mfrow=c(1,1),mar=c(13.5,2.5,.5,.5))
+   plot(pars$par, ylim=range(c( pars$par-1.96*pars$sd, pars$par+1.96*pars$sd )),
+          xlab="", xaxt="n")
+   points(pars$par - 1.96*pars$sd, pch=3)
+   points(pars$par + 1.96*pars$sd, pch=3)
+   axis(1, 1:length(pars$par), rownames(pars), las=2)
+
+   ##compute conditional expectations
+   EX <- predict(mesa.model, est.mesa.model,
+                         type = 'r', pred.var = TRUE)
+
+   plot(x = EX, y = 'obs', ID = 'all', STmodel = mesa.model)
+   plot(x = EX, y = 'time', ID = 20, STmodel = mesa.model)
+
+   #### Use the covariate names to build a linear mixed model formula for the species data ####
   fixed_effects <- paste(colnames(cent_mod_data[, !names(cent_mod_data) %in%
                                                   c('species','centrality',
                                                     'region')]),
@@ -139,11 +259,12 @@ networkModel = function(mods_list, n_bootstraps, n_cores){
 
   #### Create the formula and shuffled datasets for the community-level beta diversity data ####
   beta_fixed_effects <- paste(colnames(betadiv_mod_data[, !names(betadiv_mod_data) %in% c('beta_os',
-                                                                                       'region')]),
+                                                                                          'Latitude',
+                                                                                          'Longitude')]),
                          collapse = '+')
 
   beta_full_formula <- paste(paste('beta_os', '~', beta_fixed_effects),
-                             '(1 | region)', sep = " + ")
+                             'Matern(1|Longitude + Latitude)', sep = " + ")
 
   beta_booted_list <- vector('list', n_bootstraps)
   beta_booted_datas <- lapply(beta_booted_list, shuffle_beta_rows)
