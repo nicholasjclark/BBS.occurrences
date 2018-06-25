@@ -24,10 +24,12 @@ hurdleModel = function(flyway, n_reps, n_cores){
   }
 
 # Split into regions
-unique_regions = as.vector(all_regions %>%
+unique_regions <- all_regions %>%
                              dplyr::filter(Site.group == flyway) %>%
                              dplyr::select(Flyway.region.unique.id) %>%
-                             dplyr::distinct())[,1]
+                             dplyr::distinct()
+
+unique_regions <- as.vector(unique_regions$Flyway.region.unique.id)
 
 #### Run separate models for each region within a flyway ####
 region_mods <- lapply(seq_len(length(unique_regions)), function(j){
@@ -88,7 +90,7 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
   removed_covs <- names(covariates)[covs_remove]
   covariates <- covariates[, -covs_remove]
 
-  # A small number of year * site observations do not have landcover values
+  # A small number of year * site observations may still have missing landcover values
   # here we remove these observations from all datasets
   row_has_na <- apply(covariates, 1, function(x){any(is.na(x))})
   covariates <- as.data.frame(covariates[!row_has_na, ])

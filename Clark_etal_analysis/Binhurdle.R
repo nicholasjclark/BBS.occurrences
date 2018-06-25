@@ -3,7 +3,7 @@ library(BBS.occurrences)
 data("BBS.occurrences")
 data("BBS.abundances")
 data("Site.descriptors")
-
+View(Site)
 # Make sure that MRFcov development version is installed
 if(!require(MRFcov)){
   devtools::install_github('nicholasjclark/MRFcov@development')
@@ -19,6 +19,12 @@ all_regions %>%
   dplyr::mutate(ID = as.character(dplyr::id(.))) %>% #ID must be a character
   dplyr::ungroup() %>%
   dplyr::left_join(all_regions) -> all_regions
+
+# Impute missing landcover and ndvi values for each site
+all_regions %>%
+  dplyr::group_by(ID) %>%
+  dplyr::mutate_if(is.numeric, dplyr::funs(ifelse(is.na(.), mean(., na.rm=T), .))) %>%
+  ungroup() -> test
 
 # Test models on a single flyway (Mississippi)
 # Gather names of flyways
