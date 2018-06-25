@@ -39,9 +39,9 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
   region_abund <- BBS.abundances[region_rows, ]
   region_bin <- BBS.occurrences[region_rows, ]
 
-  # Extract coordinates for inclusion as a spatial effect
+  # Extract coordinates and altitude to ensure their inclusion in spatial network models
   coords <- all_regions %>%
-    dplyr::select(ID, Latitude, Longitude, Year)
+    dplyr::select(ID, Latitude, Longitude, Year, Altitude)
   coords <- coords[region_rows, ]
 
   # Remove species occurring in fewer than 15% of observations
@@ -59,7 +59,27 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
   # difficult to detect without at least 20 - 25 years worth of data
   # see (Teller et al., 2016) at
   # https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.12486)
-  covariates <- all_regions[region_rows, c(2, 31:48)]
+  covs_test <- c("Latitude", "Prop.forest",
+                 "Prop.shrubland",
+                 "Prop.grassland",
+                 "Prop.wetland",
+                 "Prop.anthro.urban",
+                 "Prop.anthro.cropland",
+                 "Tot.precip.yr",
+                 "Precip.seas.yr",
+                 "Mean.temp.yr",
+                 "Mean.min.temp.yr",
+                 "Mean.max.temp.yr",
+                 "Temp.seas.yr",
+                 "Tot.precip.spr",
+                 "Mean.temp.spr",
+                 "Max.temp.spr",
+                 "Min.temp.spr",
+                 "Mean.min.temp.spr",
+                 "Mean.max.temp.spr",
+                 "Altitude", "NDVI")
+
+  covariates <- all_regions[region_rows, covs_test]
 
   # Remove predictors with strong collinearity (based on pearson correlations)
   covs_remove <- caret::findCorrelation(cor(covariates,

@@ -11,7 +11,7 @@ Code in the `Appendix_S1_CompileBBS` script (within the `Clark_etal_analysis` fo
 `Appendix_S4_PhyloTraitData` describes how avian species' phylogenetic and functional
 trait datasets were accessed to create pairwise distance matrices.  
   
-`Appendix_S5_PRISMData` describes how to download climate data from the [PRISM dataset](https://climatedataguide.ucar.edu/climate-data/prism-high-resolution-spatial-climate-data-united-states-maxmin-temp-dewpoint) for each sample observation.  
+`Appendix_S5_ClimateAltitudeData` describes how to download climate data from the [PRISM dataset](https://climatedataguide.ucar.edu/climate-data/prism-high-resolution-spatial-climate-data-united-states-maxmin-temp-dewpoint) and altitude data from [NASA](https://asterweb.jpl.nasa.gov/gdem.asp) for each sample observation. NDVI data was downloaded at 40km resolution using functions in the `gimms` package    
   
 `Appendix_S6_StormData` demonstrates how to download storm data from the [NOAA storm events database](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2).  
   

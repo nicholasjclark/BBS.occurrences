@@ -4,8 +4,6 @@
 #'@importFrom parallel makePSOCKcluster setDefaultCluster clusterExport stopCluster clusterEvalQ detectCores parLapply
 #'
 #'@param points A \code{dataframe} of points with columns \code{Latitude} and \code{Longitude}
-#'@param points_spdf A \code{\link[sp]{SpatialPointsDataFrame}} object that has converted
-#'\code{points} to a spatial object
 #'@param var_name A \code{character} string specifying the name of the climate variable. If not provided,
 #'the variable's column name in the returned \code{dataframe} will be \code{mean.value}. Note that some
 #'particular point * month measurements may be missing, and so \code{NA}s will be returned for these. A
@@ -20,7 +18,7 @@
 #'is complete. Default is \code{FALSE}
 #'
 #'@export
-meanPRISM = function(points, points_spdf, var_name, buffer, filepath, n_cores, delete_files){
+meanPRISM = function(points, var_name, buffer, filepath, n_cores, delete_files){
 
   if(missing(n_cores)){
     n_cores <- detectCores() - 1
@@ -35,6 +33,12 @@ meanPRISM = function(points, points_spdf, var_name, buffer, filepath, n_cores, d
   } else{
     rename_output <- TRUE
   }
+
+  #### Create a SpatialPointsDataFrame from the specified coordinates ####
+  cat('Converting coordinates to a SpatialPointsDataFrame ...\n')
+  points_spdf <- sp::SpatialPointsDataFrame(coords = points[, c('Longitude','Latitude')],
+                                            data = points,
+                                            proj4string = sp::CRS("+proj=longlat +ellps=WGS84 +no_defs"))
 
   #### If n_cores > 1, check parallel library loading ####
   if(n_cores > 1){

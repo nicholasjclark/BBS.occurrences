@@ -4,14 +4,10 @@
 \alias{meanPRISM}
 \title{Extract mean monthly PRISM climate values for buffers around lat/long points}
 \usage{
-meanPRISM(points, points_spdf, var_name, buffer, filepath, n_cores,
-  delete_files)
+meanPRISM(points, var_name, buffer, filepath, n_cores, delete_files)
 }
 \arguments{
 \item{points}{A \code{dataframe} of points with columns \code{Latitude} and \code{Longitude}}
-
-\item{points_spdf}{A \code{\link[sp]{SpatialPointsDataFrame}} object that has converted
-\code{points} to a spatial object}
 
 \item{var_name}{A \code{character} string specifying the name of the climate variable. If not provided,
 the variable's column name in the returned \code{dataframe} will be \code{mean.value}. Note that some

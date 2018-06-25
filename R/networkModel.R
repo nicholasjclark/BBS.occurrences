@@ -19,7 +19,7 @@
 #'2: run a full model with all possible covariates as predictors
 #'3: use stepwise variable selection (using AIC as the loss function) to identify key predictors
 #'4: repeat \code{n_bootstraps} times to account for uncertainty in coefficients\cr
-#'Models are then run to identify predictors of site-level interaction \emp{B}'os using a similar
+#'Models are then run to identify predictors of site-level interaction \emph{B}'os using a similar
 #'pipeline
 #'
 #'@export

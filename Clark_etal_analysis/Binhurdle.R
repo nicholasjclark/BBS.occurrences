@@ -25,7 +25,7 @@ all_regions %>%
 flyways <- as.character(unique(all_regions$Site.group))
 
 # Fit the hurdle model (10 reps) for each flyway
-region_mods <- lapply(seq_len(flyways), function(x){
+region_mods <- lapply(seq_len(length(flyways)), function(x){
   hurdleModel(flyway = flyways[x], n_cores = 24)
 })
 names(region_mods) <- flyways

@@ -23,7 +23,8 @@ Imports: stringr,
     grid,
     caret,
     purrr,
-    lmerTest
+    lmerTest,
+    gimms
 Suggests: testthat,
     knitr, 
     rmarkdown,
