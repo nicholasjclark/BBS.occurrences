@@ -132,12 +132,17 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
                                            n_cores = n_cores)
 
   #### Predict network centrality and local network beta diversity (B'os) ####
+  cat('Calculating predicted abundances ...\n')
+  abund_predictions <- MRFcov::predict_MRF(data = cbind(region_abund, covariates),
+                                           MRF_mod = abundance_mod, n_cores = n_cores)
+
   cat('Predicting species centralities ...\n')
   abundance_cent <- MRFcov::predict_MRFnetworks(data = cbind(region_abund, covariates),
                                                 MRF_mod = abundance_mod, metric = "eigencentrality",
                                                 cutoff = 2,
                                                 omit_zeros = TRUE,
-                                                n_cores = n_cores)
+                                                n_cores = n_cores,
+                                                cached_predictions = abund_predictions)
 
   network_metrics <- cbind(abundance_cent, covariates)
 
@@ -146,7 +151,8 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
                                                MRF_mod = abundance_mod, metric = 'adjacency',
                                                cutoff = 2,
                                                omit_zeros = TRUE,
-                                               n_cores = n_cores)
+                                               n_cores = n_cores,
+                                               cached_predictions = abund_predictions)
 
   beta_os_primes <- networkBetaOS(abundance_adj, n_cores = n_cores)
 
@@ -155,16 +161,13 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
   rm(abundance_cent, abundance_adj)
 
   #### Assess model fit from abundance model ####
-  #abund_predictions <- MRFcov::predict_MRF(data = cbind(region_abund, covariates),
-                                          # MRF_mod = abundance_mod, n_cores = n_cores)
-
-  #abund_metrics <- MRFcov::cv_MRF_diag(data = cbind(region_abund, covariates),
-                                      # n_nodes = nrow(abundance_mod$direct_coefs),
-                                      # n_folds = 10, n_cores = 1, family = 'poisson',
-                                      # compare_null = FALSE, plot = FALSE,
-                                      # cached_model = list(mrf = abundance_mod),
-                                      # cached_predictions = list(predictions = abund_predictions),
-                                      # sample_seed = 1)
+  abund_metrics <- MRFcov::cv_MRF_diag(data = cbind(region_abund, covariates),
+                                      n_nodes = nrow(abundance_mod$direct_coefs),
+                                      n_folds = 10, n_cores = 1, family = 'poisson',
+                                      compare_null = FALSE, plot = FALSE,
+                                      cached_model = list(mrf = abundance_mod),
+                                      cached_predictions = list(predictions = abund_predictions),
+                                      sample_seed = 1)
   cat('Finished regional run ...\n')
   list(occurrence_mod = occurrence_mod,
        occurrence_spec = quantile(occurrence_mets$mean_specificity,
@@ -173,8 +176,8 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
                                   probs = c(0.025, 0.5, 0.975)),
        abundance_mod = abundance_mod,
        network_metrics = network_metrics,
-       #abund_Rsquared = quantile(abund_metrics$Rsquared,
-                                # probs = c(0.025, 0.5, 0.975)),
+       abund_Rsquared = quantile(abund_metrics$Rsquared,
+                                 probs = c(0.025, 0.5, 0.975)),
        coordinates = coords,
        removed_covs = removed_covs,
        top_count = top_count)
