@@ -106,13 +106,13 @@ if(parallel_compliant){
   clusterEvalQ(cl, library(betalink))
 
   #Calculate B'os for each local network
-  os_prime <- unlist(parallel::parLapply(NULL, seq_along(adjacency_list), function(x){
+  os_prime <- unlist(pbapply::pblapply(seq_along(adjacency_list), function(x){
     if(is.null(adjacency_list[[x]])){
       'NA'
     } else{
       betalink::betalink(adjacency_list[[x]], metaweb)$OS
     }
-  }))
+  }, cl = cl))
   stopCluster(cl)
 
 } else{

@@ -88,7 +88,7 @@ predictlassoBinomial = function(outcome_data, lassoBinomial, count_data,
     warning('Parallel loading failed, calculations may crash!')
   }
 
-  # Calculate linear predictions using the `coefficients element from the model
+  # Calculate linear predictions using the coefficients element from the model
   covariates <- cbind(count_data, covariates)
 
   if(parallel_compliant){

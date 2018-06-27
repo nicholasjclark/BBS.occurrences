@@ -1,5 +1,5 @@
-#' Run linear mixed models to identify predictors of species' eigencentralities
-#' across sites
+#' Run binomial logistic models to predict species' occurrences and gaussian CRFs
+#' to predict species' local abundances.
 #'
 #'@importFrom magrittr %>%
 #'
@@ -13,7 +13,9 @@
 #'probability using \code{lassoBinomial} and then fitting a conditional random field to species'
 #'scaled abundances using \code{lassoGaussian}. Each of these models is run \code{n_reps} times
 #'to allow for uncertainty in coefficient estimates. Predictions are then used to estimate model fits and
-#'predict community network \emph{B}'os and species' eigencentrality in each site
+#'predict community network \emph{B}'os and species' eigencentrality in each site. All models are
+#'run for sites within a unique bioregion, ensuring that network metrics reflect variation among
+#'sites with similar climate and species compositions.
 #'
 #'@export
 #'
@@ -161,6 +163,7 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
   rm(abundance_cent, abundance_adj)
 
   #### Assess model fit from abundance model ####
+  cat('Calculating gaussian abundance model fit ...\n')
   abund_metrics <- MRFcov::cv_MRF_diag(data = cbind(region_abund, covariates),
                                       n_nodes = nrow(abundance_mod$direct_coefs),
                                       n_folds = 10, n_cores = 1, family = 'poisson',
