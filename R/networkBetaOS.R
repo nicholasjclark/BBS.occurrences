@@ -40,7 +40,8 @@ networkBetaOS <- function(adjacency_list, n_cores){
   }
 
 #Convert the list of adjacency matrices to a metaweb
-metaweb <- betalink::metaweb(adjacency_list)
+adjacency_list_no.na <- adjacency_list[lapply(adjacency_list, length) > 0]
+metaweb <- betalink::metaweb(adjacency_list_no.na)
 
 if(missing(n_cores)){
   n_cores <- parallel::detectCores() - 1
@@ -106,13 +107,21 @@ if(parallel_compliant){
 
   #Calculate B'os for each local network
   os_prime <- unlist(parallel::parLapply(NULL, seq_along(adjacency_list), function(x){
-    betalink::betalink(adjacency_list[[x]], metaweb)$OS
+    if(is.null(adjacency_list[[x]])){
+      'NA'
+    } else{
+      betalink::betalink(adjacency_list[[x]], metaweb)$OS
+    }
   }))
   stopCluster(cl)
 
 } else{
   os_prime <- unlist(lapply(seq_along(adjacency_list), function(x){
-    betalink::betalink(adjacency_list[[x]], metaweb)$OS
+    if(is.null(adjacency_list[[x]])){
+      'NA'
+    } else{
+      betalink::betalink(adjacency_list[[x]], metaweb)$OS
+    }
 }))
 }
 return(os_prime)
