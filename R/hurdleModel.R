@@ -50,13 +50,29 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
 
   # Remove species occurring in fewer than 15% of observations
   low_occur_cols <- which((colSums(region_bin) / nrow(region_bin)) < 0.15)
-  region_bin <- region_bin[, -low_occur_cols]
-  region_abund <- region_abund[, -low_occur_cols]
+
+  if(length(low_occur_cols) == 0){
+    region_bin <- region_bin
+    region_abund <- region_abund
+
+  } else {
+
+    region_bin <- region_bin[, -low_occur_cols]
+    region_abund <- region_abund[, -low_occur_cols]
+  }
 
   # Species that are too common cannot be assessed in occurrence models
   high_occur_cols <- which((colSums(region_bin) / nrow(region_bin)) > 0.9)
-  region_bin_outcome <- region_bin[, -high_occur_cols]
-  region_abund_predict <- region_abund[, -high_occur_cols]
+
+  if(length(high_occur_cols) == 0){
+    region_bin_outcome <- region_bin
+    region_abund_predict <- region_abund
+
+  } else {
+
+    region_bin_outcome <- region_bin[, -high_occur_cols]
+    region_abund_predict <- region_abund[, -high_occur_cols]
+  }
 
   # Remove un-needed rows from covariates data and extract climate / landcover covariates
   # note, year is not included as temporal autocorrelation will be
