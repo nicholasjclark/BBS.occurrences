@@ -104,9 +104,15 @@ region_mods <- lapply(seq_len(length(unique_regions)), function(j){
   # Remove predictors with strong collinearity (based on pearson correlations)
   covs_remove <- caret::findCorrelation(cor(covariates,
                                             use = "na.or.complete"),
-                                        cutoff = .95, exact = T)
+                                        cutoff = .99, exact = T)
   removed_covs <- names(covariates)[covs_remove]
-  covariates <- covariates[, -covs_remove]
+
+  if(length(covs_remove) == 0){
+    covariates <- covariates
+
+  } else {
+    covariates <- covariates[, -covs_remove]
+  }
 
   # A small number of year * site observations may still have missing landcover values
   # here we remove these observations from all datasets
