@@ -13,18 +13,12 @@
 #'Default is TRUE
 #'@param n_cores Positive integer stating the number of processing cores to split the job across.
 #'Default is \code{parallel::detect_cores() - 1}
-#'@param delete_files Logical describing whether or not to delete raw PRISM data folders once the job
-#'is complete. Default is \code{FALSE}
 #'
 #'@export
-processNDVI = function(filepath, points, buffer, northern_summer = T, n_cores, delete_files){
+processNDVI = function(filepath, points, buffer, northern_summer = T, n_cores){
 
 if(missing(n_cores)){
   n_cores <- parallel::detectCores() - 1
-}
-
-if(missing(delete_files)){
-    delete_files <- FALSE
 }
 
 #### Convert coordinates to a SpatialPointsDataFrame object ####
