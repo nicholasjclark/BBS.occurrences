@@ -129,17 +129,19 @@ stopCluster(cl)
   #### Use lapply if parallel loading fails ####
   extract_gimms_data <- pbapply::pblapply(seq_along(gimms_files), function(x){
 
-    # Extract mean values within the specified buffer range
+    # Extract mean and sd values within the specified buffer range
     gimmsRaster <- gimms::rasterizeGimms(gimms_files[x], keep = c(1,2,3))
     ndvi <- raster::extract(gimmsRaster, points_spdf, buffer = buffer)
     rm(gimmsRaster)
 
-    ndvi <- as.numeric(lapply(ndvi, mean, na.rm = TRUE))
+    ndvi_mean <- as.numeric(lapply(ndvi, mean, na.rm = TRUE))
+    ndvi_sd <- as.numeric(lapply(ndvi, sd, na.rm = TRUE))
 
     # Extract the Year value and return a dataframe
     year <- as.numeric(substr(basename(gimms_files[x]), 15, 18))
 
-    data.frame(Year = year, NDVI = ndvi,
+    data.frame(Year = year, NDVI_mean = ndvi_mean,
+               NDVI_sd = ndvi_sd,
                Latitude = points$Latitude,
                Longitude = points$Longitude,
                stringsAsFactors = FALSE)
