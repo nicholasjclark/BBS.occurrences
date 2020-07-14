@@ -40,8 +40,9 @@ gimms_files <- list.files(filepath, full.names = TRUE)
 if(northern_summer){
 # Keep only files containing summer NDVI readings (remove winter readings)
 gimms_files <- gimms_files[!grepl('0106', gimms_files)]
+
 } else {
-  imms_files <- gimms_files[grepl('0106', gimms_files)]
+  gimms_files <- gimms_files[grepl('0106', gimms_files)]
 }
 
 #### If n_cores > 1, check parallel library loading ####
