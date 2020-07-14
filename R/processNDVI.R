@@ -8,13 +8,16 @@
 #'@param points A \code{dataframe} of points with columns \code{Latitude} and \code{Longitude}
 #'@param buffer Positive numeric value stating the length (in meters) of the desired buffer radius.
 #'Mean values of the climate variable will be calculated for each point from within this buffer
+#'@param northern_summer Logical. If TRUE, calculate NDVI for the northern hemisphere summer using
+#'July observations. If FALSE, calculate NDVI for southern hemisphere summer using January observations.
+#'Default is TRUE
 #'@param n_cores Positive integer stating the number of processing cores to split the job across.
 #'Default is \code{parallel::detect_cores() - 1}
 #'@param delete_files Logical describing whether or not to delete raw PRISM data folders once the job
 #'is complete. Default is \code{FALSE}
 #'
 #'@export
-processNDVI = function(filepath, points, buffer, n_cores, delete_files){
+processNDVI = function(filepath, points, buffer, northern_summer = T, n_cores, delete_files){
 
 if(missing(n_cores)){
   n_cores <- parallel::detectCores() - 1
@@ -34,8 +37,12 @@ points_spdf <- sp::SpatialPointsDataFrame(coords = points[, c('Longitude','Latit
 #### Find all Gimms files within the specified folder ####
 gimms_files <- list.files(filepath, full.names = TRUE)
 
+if(northern_summer){
 # Keep only files containing summer NDVI readings (remove winter readings)
 gimms_files <- gimms_files[!grepl('0106', gimms_files)]
+} else {
+  imms_files <- gimms_files[grepl('0106', gimms_files)]
+}
 
 #### If n_cores > 1, check parallel library loading ####
 if(n_cores > 1){
