@@ -4,7 +4,7 @@
 \name{BirdTree.syns}
 \alias{BirdTree.syns}
 \title{Synonyms for avian species, along with their matching BirdTree.org taxonomy}
-\format{An object of class \code{data.frame} with 3083 rows and 3 columns.}
+\format{An object of class \code{data.frame} with 3096 rows and 3 columns.}
 \usage{
 data(BirdTree.syns)
 }

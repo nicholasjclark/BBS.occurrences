@@ -8,8 +8,8 @@ that governs species' abundances}
 \usage{
 lassoGaussian(response, covariates, cutoff, n_reps)
 
-lassoAbund_comm(outcome_data, binary_data, outcome_indices, covariates, cutoff,
-  n_reps, n_cores)
+lassoAbund_comm(outcome_data, binary_data, outcome_indices, covariates,
+  cutoff, n_reps, n_cores)
 }
 \arguments{
 \item{response}{A \code{vector} of count observations for the
@@ -53,9 +53,6 @@ in predictive functions
 \description{
 \code{lassoGaussian} runs cross-validated regularized regressions for a single species
 and returns important coefficients
-
-\code{lassoAbund_comm} runs the lassoGaussian function across multiple species
-in a community dataset
 }
 \details{
 Regularized regressions are performed to identify meaningful predictors of

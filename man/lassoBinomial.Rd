@@ -53,9 +53,6 @@ in predictive functions
 \description{
 \code{lassoBinomial} runs cross-validated regularized regressions for a single species
 and returns important coefficients
-
-\code{lassoBinomial_comm} runs the lassoBinomial function across multiple species
-in a community dataset
 }
 \details{
 Regularized regressions are performed to identify meaningful predictors of

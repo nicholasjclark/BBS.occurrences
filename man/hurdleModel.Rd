@@ -2,8 +2,8 @@
 % Please edit documentation in R/hurdleModel.R
 \name{hurdleModel}
 \alias{hurdleModel}
-\title{Run linear mixed models to identify predictors of species' eigencentralities
-across sites}
+\title{Run binomial logistic models to predict species' occurrences and gaussian CRFs
+to predict species' local abundances.}
 \usage{
 hurdleModel(flyway, n_reps, n_cores)
 }
@@ -17,13 +17,15 @@ hurdleModel(flyway, n_reps, n_cores)
 Default is \code{parallel::detect_cores() - 1}}
 }
 \description{
-Run linear mixed models to identify predictors of species' eigencentralities
-across sites
+Run binomial logistic models to predict species' occurrences and gaussian CRFs
+to predict species' local abundances.
 }
 \details{
 This function runs the hurdle model by first estimating predictors of species' occurrence
 probability using \code{lassoBinomial} and then fitting a conditional random field to species'
 scaled abundances using \code{lassoGaussian}. Each of these models is run \code{n_reps} times
 to allow for uncertainty in coefficient estimates. Predictions are then used to estimate model fits and
-predict community network \emph{B}'os and species' eigencentrality in each site
+predict community network \emph{B}'os and species' eigencentrality in each site. All models are
+run for sites within a unique bioregion, ensuring that network metrics reflect variation among
+sites with similar climate and species compositions.
 }
