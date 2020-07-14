@@ -104,12 +104,14 @@ extract_gimms_data <- pbapply::pblapply(seq_along(gimms_files), function(x){
   ndvi <- raster::extract(gimmsRaster, points_spdf, buffer = buffer)
   rm(gimmsRaster)
 
-  ndvi <- as.numeric(lapply(ndvi, mean, na.rm = TRUE))
+  ndvi_mean <- as.numeric(lapply(ndvi, mean, na.rm = TRUE))
+  ndvi_sd <- as.numeric(lapply(ndvi, sd, na.rm = TRUE))
 
   # Extract the Year value and return a dataframe
   year <- as.numeric(substr(basename(gimms_files[x]), 15, 18))
 
-  data.frame(Year = year, NDVI = ndvi,
+  data.frame(Year = year, NDVI_mean = ndvi_mean,
+             NDVI_sd = ndvi_sd,
              Latitude = points$Latitude,
              Longitude = points$Longitude,
              stringsAsFactors = FALSE)
